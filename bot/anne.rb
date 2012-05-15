@@ -9,18 +9,43 @@ module Bot
             @apiKey    = apiKey
             @log       = Logger.new(STDOUT)
             @log.level = Logger::DEBUG
+
+            @matcher = FuzzyStringMatch::JaroWinkler.create( :native )
         end
 
         # Asana interactions
 
         def findWorkspace(workspaceName) 
-            # Fetch workspace listing -> cache
+
             # Fuzzy search for workspace
+            maxscore = 0.0;
+            targetWorkspace = nil
+            Asana::Workspace.all.each do |workspace| 
+                score = matcher.getDistance(workspace.name, workspaceName) 
+                if score > maxscore 
+                    targetWorkspace = workspace
+                    maxscore = score
+                end
+            end
+
+            # TODO: Do we want to have a threshold for matches?
+            return targetWorkspace
         end
 
         def findTask(taskName, workspace)
             # Fetch tasks from workspace
+            maxscore = 0.0
+            targetTask = nil
+            workspace.tasks.each do |task| 
+                score = matcher.getDistance(task.name, taskName)
+                if score > maxscore
+                    targetTask = task
+                    maxscore = score
+                end
+            end
 
+            # TODO: Do we want to have a threshold for matches?
+            return targetTask
         end
 
         # Messaging
@@ -49,6 +74,7 @@ module Bot
 
             # Listing
             # TODO 
+
             # Creation 
 
             # Tasks must have associated workspace
