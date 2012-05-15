@@ -1,6 +1,7 @@
 require 'logger'
 require 'blather/stanza/message'
 require 'asana'
+require 'fuzzystringmatch'
 
 module Bot
     class Anne 
@@ -29,6 +30,34 @@ module Bot
             if message.body.match /hey/i or message.body.match /hello/i
                 # Just a greeting
                 return buildMessage message.from.stripped ("Anne: Hello "+senderName)
+
+            # Listing
+
+            # Creation 
+            
+            # Tasks must have associated workspace
+                # Single line
+                # "anne, create ... [taskname] ... [workspacename] "
+                    # Fetch workspace listing
+                    # Fuzzy search for workspace
+                    # Create task
+
+            # Story
+                # Single line
+                # "anne, ... comment on ... [story] ... [taskname] ... [workspacename]"
+                    # Fetch workspace listing
+                    # Fuzzy search for workspace
+                    # Fuzzy search for task
+                    # Create story task
+
+            # Completion
+                # Single line
+                # "anne, ... complete ... [taskname] ... [workspacename]"
+                    # Fetch workspace listing
+                    # Fuzzy search for workspace
+                    # Fuzzy search for task
+                    # Update task
+
             else
                 # Default / Give up
                 return buildMessage message.from.stripped ("Anne: Sorry "+senderName+", I can't help you with that.")
