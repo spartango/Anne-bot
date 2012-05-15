@@ -31,7 +31,7 @@ module Bot
                 return buildMessage message.from.stripped ("Anne: Hello "+senderName)
             else
                 # Default / Give up
-                return buildMessage message.from.stripped "Anne: Sorry "+senderName+", I can't help you with that."
+                return buildMessage message.from.stripped ("Anne: Sorry "+senderName+", I can't help you with that.")
             end
 
         end
