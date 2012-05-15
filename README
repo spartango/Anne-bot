@@ -1,0 +1,35 @@
+Anne
+-------
+
+@ Anand Gupta, 2012
+
+A Google Talk Robot with Eyes on Asana
+
+Install 
+-------
+
+Anne uses bundler to get his deps. 
+Use 'bundle install' to set things up
+
+You'll need to provide gtalk credentials for Anne:
+
+Fill in 
+botUsername = ''
+botPassword = ''
+in bot/mcore.rb
+
+You can customise malcolm's behavior in malcolm.rb
+
+Run
+---
+
+Just execute run.sh
+
+If you peek inside run.sh, you'll see that all it does is bundle exec, making
+Anne something perfectly suitable for use on Heroku. 
+
+Usage
+-----
+
+Anne needs your asana API key before you can use her...
+Checkout http://developer.asana.com
