@@ -11,6 +11,12 @@ module Bot
             @log.level = Logger::DEBUG
         end
 
+        # Messaging
+
+        def buildMessage(user, body) 
+            return Blather::Stanza::Message.new user, body
+        end
+
         # Asana interactions
 
         def findWorkspace(workspaceName) 
@@ -48,10 +54,43 @@ module Bot
             return targetTask
         end
 
-        # Messaging
+        # Creation parsing
+        def parseNewTask
 
-        def buildMessage(user, body) 
-            return Blather::Stanza::Message.new user, body
+        end
+
+        def parseNewComment
+
+        end
+
+        def parseCompleteTask
+
+        end
+
+        # Creation handle
+        def handleNewTask(taskName, workspaceName)
+            workspace = findWorkspace workspaceName
+            # Create task
+            workspace.create_task(:name => taskName)
+            return [buildMessage message.from.stripped ("Anne: I've created the task, "+taskName+", in "+workspace.name)]
+        end       
+
+        def handleNewComment(commentText, taskName, workspaceName)
+            workspace = findWorkspace workspaceName
+            # Fuzzy search for task
+            task = findTask taskName workspace
+            # Create story task
+            task.create_story(:text => commentText)
+            return [buildMessage message.from.stripped ("Anne: I've added a comment to "+workspace.name+" task, "+task.name)]
+        end
+
+        def handleCompleteTask(taskName, workspaceName)
+            workspace = findWorkspace workspaceName
+            # Find task
+            task = findTask taskName workspace
+            # Update task
+            task.update_attributed(:completed, true)
+            return [buildMessage message.from.stripped ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete.")]
         end
 
         # Events
@@ -62,6 +101,7 @@ module Bot
         end
 
         def onQuery(message)
+            condition = false
             # Anne Queries
             senderName = message.from.node.to_s
 
@@ -70,7 +110,7 @@ module Bot
             # Global
             if queryText.match /hey/i or queryText.match /hello/i
                 # Just a greeting
-                return buildMessage message.from.stripped ("Anne: Hello "+senderName)
+                return [buildMessage message.from.stripped ("Anne: Hello "+senderName)]
 
             # Listing
             # TODO 
@@ -83,11 +123,7 @@ module Bot
             elsif condition
 
                 # Parse out taskName and workspaceName
-
-                workspace = findWorkspace workspaceName
-                # Create task
-                workspace.create_task(:name => taskName)
-                return buildMessage message.from.stripped ("Anne: Created task, "+taskName+", in "+workspace.name)
+                return handleNewTask taskName, workspaceName
 
             elsif condition
             # Story
@@ -96,12 +132,7 @@ module Bot
 
                 # Parse out story, taskName, and workspaceName
 
-                workspace = findWorkspace workspaceName
-                # Fuzzy search for task
-                task = findTask taskName workspace
-                # Create story task
-                task.create_story(:text => commentText)
-                return buildMessage message.from.stripped ("Anne: Added comment to "+workspace.name+" task, "+task.name)
+                return handleNewComment story, taskName, workspaceName
             
             elsif condition            
             # Completion
@@ -110,16 +141,11 @@ module Bot
 
                 # Parse out taskName and workspaceName
 
-                workspace = findWorkspace workspaceName
-                # Find task
-                task = findTask taskName workspace
-                # Update task
-                task.update_attributed(:completed, true)
-                return buildMessage message.from.stripped ("Anne: Marked "+workspace.name" task, "+task.name+", complete.")
+                return handleCompleteTask taskName, workspaceName
  
             else
                 # Default / Give up
-                return buildMessage message.from.stripped ("Anne: Sorry? Is there a way I can help?")
+                return [buildMessage message.from.stripped "Anne: Sorry? Is there a way I can help?"]
             end
 
         end
