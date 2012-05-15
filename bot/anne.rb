@@ -72,7 +72,7 @@ module Bot
             workspace = findWorkspace workspaceName
             # Create task
             workspace.create_task(:name => taskName)
-            return [buildMessage message.from.stripped ("Anne: I've created the task, "+taskName+", in "+workspace.name)]
+            return [(buildMessage message.from.stripped, ("Anne: I've created the task, "+taskName+", in "+workspace.name))]
         end       
 
         def handleNewComment(commentText, taskName, workspaceName)
@@ -81,7 +81,7 @@ module Bot
             task = findTask taskName workspace
             # Create story task
             task.create_story(:text => commentText)
-            return [buildMessage message.from.stripped ("Anne: I've added a comment to "+workspace.name+" task, "+task.name)]
+            return [(buildMessage message.from.stripped, ("Anne: I've added a comment to "+workspace.name+" task, "+task.name))]
         end
 
         def handleCompleteTask(taskName, workspaceName)
@@ -90,7 +90,7 @@ module Bot
             task = findTask taskName workspace
             # Update task
             task.update_attributed(:completed, true)
-            return [buildMessage message.from.stripped ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete.")]
+            return [(buildMessage message.from.stripped, ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete."))]
         end
 
         # Events
