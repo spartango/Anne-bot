@@ -26,7 +26,7 @@ module Bot
             # TODO handle Asana queries
 
             # Global
-            if message.body.match /hey/ or message.body.match /hello/
+            if message.body.match /hey/i or message.body.match /hello/i
                 # Just a greeting
                 return buildMessage message.from.stripped ("Anne: Hello "+senderName)
             else
@@ -39,7 +39,7 @@ module Bot
         def onMessage(message)
             # Query handling
             queryMsgs = []
-            if message.body.match /Anne/ or message.body.match /anne/
+            if message.body.match /Anne/i 
                 queryMsgs = onQuery(message)
             end
 
