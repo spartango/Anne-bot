@@ -110,7 +110,7 @@ module Bot
             # Global
             if queryText.match /hey/i or queryText.match /hello/i
                 # Just a greeting
-                return [buildMessage message.from.stripped ("Anne: Hello "+senderName)]
+                return [(buildMessage message.from.stripped, ("Anne: Hello "+senderName))]
 
             # Listing
             # TODO 
@@ -145,7 +145,7 @@ module Bot
  
             else
                 # Default / Give up
-                return [buildMessage message.from.stripped "Anne: Sorry? Is there a way I can help?"]
+                return [(buildMessage message.from.stripped, "Anne: Sorry? Is there a way I can help?")]
             end
 
         end
