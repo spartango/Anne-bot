@@ -1,7 +1,7 @@
 require 'logger'
 require 'blather/stanza/message'
 require 'asana'
-require 'fuzzystringmatch'
+require 'amatch'
 
 module Bot
     class Anne 
@@ -9,8 +9,6 @@ module Bot
             @apiKey    = apiKey
             @log       = Logger.new(STDOUT)
             @log.level = Logger::DEBUG
-
-            @matcher = FuzzyStringMatch::JaroWinkler.create( :native )
         end
 
         # Asana interactions
@@ -20,8 +18,9 @@ module Bot
             # Fuzzy search for workspace
             maxscore = 0.0;
             targetWorkspace = nil
+            matcher = Jaro.new(workspaceName)
             Asana::Workspace.all.each do |workspace| 
-                score = matcher.getDistance(workspace.name, workspaceName) 
+                score = matcher.match workspace.name
                 if score > maxscore 
                     targetWorkspace = workspace
                     maxscore = score
@@ -36,8 +35,9 @@ module Bot
             # Fetch tasks from workspace
             maxscore = 0.0
             targetTask = nil
+            matcher = Jaro.new(taskName)
             workspace.tasks.each do |task| 
-                score = matcher.getDistance(task.name, taskName)
+                score = matcher.match task.name
                 if score > maxscore
                     targetTask = task
                     maxscore = score
@@ -79,8 +79,11 @@ module Bot
 
             # Tasks must have associated workspace
                 # Single line
-                # "anne, ... create ... task [taskname] in [workspacename] "
+                # "anne, ... create task (first) [taskname] in (last) [workspacename] "
             elsif condition
+
+                # Parse out taskName and workspaceName
+
                 workspace = findWorkspace workspaceName
                 # Create task
                 workspace.create_task(:name => taskName)
@@ -89,7 +92,10 @@ module Bot
             elsif condition
             # Story
                 # Single line
-                # "anne, ... post [story] on [taskname] in  [workspacename]"
+                # "anne, ... post (first) [story] on [taskname] in (last) [workspacename]"
+
+                # Parse out story, taskName, and workspaceName
+
                 workspace = findWorkspace workspaceName
                 # Fuzzy search for task
                 task = findTask taskName workspace
@@ -100,7 +106,10 @@ module Bot
             elsif condition            
             # Completion
                 # Single line
-                # "anne, ... complete [taskname] in [workspacename]"
+                # "anne, ... complete (first) [taskname] in (last) [workspacename]"
+
+                # Parse out taskName and workspaceName
+
                 workspace = findWorkspace workspaceName
                 # Find task
                 task = findTask taskName workspace
