@@ -84,7 +84,7 @@ module Bot
                 workspace = findWorkspace workspaceName
                 # Create task
                 workspace.create_task(:name => taskName)
-                return buildMessage message.from.stripped ("Anne: ")
+                return buildMessage message.from.stripped ("Anne: Created task "+taskName+" in "+workspace.name)
 
             elsif condition
             # Story
@@ -95,7 +95,7 @@ module Bot
                 task = findTask taskName workspace
                 # Create story task
                 task.create_story(:text => commentText)
-                return buildMessage message.from.stripped ("Anne: ")
+                return buildMessage message.from.stripped ("Anne: Added comment to "+workspace.name+" task "+task.name)
             
             elsif condition            
             # Completion
@@ -106,11 +106,11 @@ module Bot
                 task = findTask taskName workspace
                 # Update task
                 task.update_attributed(:completed, true)
-                return buildMessage message.from.stripped ("Anne: ")
-
+                return buildMessage message.from.stripped ("Anne: Marked "+workspace.name" task "+task.name+" complete.")
+ 
             else
                 # Default / Give up
-                return buildMessage message.from.stripped ("Anne: Sorry "+senderName+", I can't help you with that.")
+                return buildMessage message.from.stripped ("Anne: Sorry? Is there a way I can help?")
             end
 
         end
