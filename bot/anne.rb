@@ -18,7 +18,7 @@ module Bot
             # Fuzzy search for workspace
             maxscore = 0.0;
             targetWorkspace = nil
-            matcher = Jaro.new(workspaceName)
+            matcher = Amatch::Jaro.new(workspaceName)
             Asana::Workspace.all.each do |workspace| 
                 score = matcher.match workspace.name
                 if score > maxscore 
@@ -35,7 +35,7 @@ module Bot
             # Fetch tasks from workspace
             maxscore = 0.0
             targetTask = nil
-            matcher = Jaro.new(taskName)
+            matcher = Amatch::Jaro.new(taskName)
             workspace.tasks.each do |task| 
                 score = matcher.match task.name
                 if score > maxscore
