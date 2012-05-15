@@ -81,32 +81,32 @@ module Bot
                 # Single line
                 # "anne, create ... [taskname] ... [workspacename] "
             elsif condition
-                    workspace = findWorkspace workspaceName
-                    # Create task
-                    workspace.create_task(:name => taskName)
-                    return buildMessage message.from.stripped ("Anne: ")
+                workspace = findWorkspace workspaceName
+                # Create task
+                workspace.create_task(:name => taskName)
+                return buildMessage message.from.stripped ("Anne: ")
 
             elsif condition
             # Story
                 # Single line
                 # "anne, ... comment on ... [story] ... [taskname] ... [workspacename]"
-                    workspace = findWorkspace workspaceName
-                    # Fuzzy search for task
-                    task = findTask taskName workspace
-                    # Create story task
-                    task.create_story(:text => commentText)
-                    return buildMessage message.from.stripped ("Anne: ")
+                workspace = findWorkspace workspaceName
+                # Fuzzy search for task
+                task = findTask taskName workspace
+                # Create story task
+                task.create_story(:text => commentText)
+                return buildMessage message.from.stripped ("Anne: ")
             
             elsif condition            
             # Completion
                 # Single line
                 # "anne, ... complete ... [taskname] ... [workspacename]"
-                    workspace = findWorkspace workspaceName
-                    # Find task
-                    task = findTask taskName workspace
-                    # Update task
-                    task.update_attributed(:completed, true)
-                    return buildMessage message.from.stripped ("Anne: ")
+                workspace = findWorkspace workspaceName
+                # Find task
+                task = findTask taskName workspace
+                # Update task
+                task.update_attributed(:completed, true)
+                return buildMessage message.from.stripped ("Anne: ")
 
             else
                 # Default / Give up
