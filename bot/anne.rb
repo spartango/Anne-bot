@@ -65,10 +65,10 @@ module Bot
             # Anne Queries
             senderName = message.from.node.to_s
 
-            # TODO handle Asana queries
+            queryText = message.body # Strip the Anne part out
 
             # Global
-            if message.body.match /hey/i or message.body.match /hello/i
+            if queryText.match /hey/i or queryText.match /hello/i
                 # Just a greeting
                 return buildMessage message.from.stripped ("Anne: Hello "+senderName)
 
@@ -79,34 +79,34 @@ module Bot
 
             # Tasks must have associated workspace
                 # Single line
-                # "anne, create ... [taskname] ... [workspacename] "
+                # "anne, ... create ... task [taskname] in [workspacename] "
             elsif condition
                 workspace = findWorkspace workspaceName
                 # Create task
                 workspace.create_task(:name => taskName)
-                return buildMessage message.from.stripped ("Anne: Created task "+taskName+" in "+workspace.name)
+                return buildMessage message.from.stripped ("Anne: Created task, "+taskName+", in "+workspace.name)
 
             elsif condition
             # Story
                 # Single line
-                # "anne, ... comment on ... [story] ... [taskname] ... [workspacename]"
+                # "anne, ... post [story] on [taskname] in  [workspacename]"
                 workspace = findWorkspace workspaceName
                 # Fuzzy search for task
                 task = findTask taskName workspace
                 # Create story task
                 task.create_story(:text => commentText)
-                return buildMessage message.from.stripped ("Anne: Added comment to "+workspace.name+" task "+task.name)
+                return buildMessage message.from.stripped ("Anne: Added comment to "+workspace.name+" task, "+task.name)
             
             elsif condition            
             # Completion
                 # Single line
-                # "anne, ... complete ... [taskname] ... [workspacename]"
+                # "anne, ... complete [taskname] in [workspacename]"
                 workspace = findWorkspace workspaceName
                 # Find task
                 task = findTask taskName workspace
                 # Update task
                 task.update_attributed(:completed, true)
-                return buildMessage message.from.stripped ("Anne: Marked "+workspace.name" task "+task.name+" complete.")
+                return buildMessage message.from.stripped ("Anne: Marked "+workspace.name" task, "+task.name+", complete.")
  
             else
                 # Default / Give up
