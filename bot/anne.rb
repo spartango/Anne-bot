@@ -173,7 +173,47 @@ module Bot
                 return [(buildMessage message.from.stripped, ("Anne: Hello "+senderName))]
 
             # Listing
-            # TODO 
+                        
+            # Get all workspaces
+            if queryText.match /get all workspaces/i
+                # List of workspaces
+                workspaces = Asana::Workspace.all
+                return [(buildMessage message.from.stripped, ("Anne: Your workspaces include: "+workspaces))] 
+
+            # Get specific workspace
+            
+            # Get all projects in given workspace
+            if queryText.match /get projects in X/i
+                X = workspace_id
+                workspace = Asana::Workspace.find(:workspace_id)
+                # TODO what if no such workspace_id
+                projects = workspace.projects
+                return [(buildMessage message.from.stripped, ("Anne: Here are the projects in that workspace: "+projects))]
+            
+            # Get all tasks in a given workspace
+            
+            # Get all tasks in a given workspace associated with a specific user
+            
+            # Get all users with access to a given workspace
+            
+            # Get all projects
+            
+            # Get a specific project (fuzzy search?)
+                
+            # Get all tasks in a given project
+            if queryText.match /get tasks in X/i
+                X = project_id
+                project = Asana::Project.find(:project_id)
+                # TODO what if no such project_id?
+                tasks = project.tasks
+                return [(buildMessage message.from.stripped, ("Anne: Here are the tasks for that project: "+tasks))]
+            
+            # Get all stories for a given task
+            #if queryText.match /get all stories for X/i
+            #    X = 
+            #    task = tasks.first
+            #    stories = task.stories
+            # Get a specific story
 
             # Creation 
 
