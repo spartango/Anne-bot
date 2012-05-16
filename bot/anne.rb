@@ -55,15 +55,15 @@ module Bot
         end
 
         # Creation parsing
-        def parseNewTask
+        def parseNewTask(queryText)
 
         end
 
-        def parseNewComment
+        def parseNewComment(queryText)
 
         end
 
-        def parseCompleteTask
+        def parseCompleteTask(queryText)
 
         end
 
@@ -108,7 +108,7 @@ module Bot
             queryText = message.body # Strip the Anne part out
 
             # Global
-            if queryText.match /hey/i or queryText.match /hello/i
+            if queryText.match /hey/i or queryText.match /hello/i or queryText.match /Hi/i
                 # Just a greeting
                 return [(buildMessage message.from.stripped, ("Anne: Hello "+senderName))]
 
@@ -119,34 +119,34 @@ module Bot
 
             # Tasks must have associated workspace
                 # Single line
-                # "anne, ... create task (first) [taskname] in (last) [workspacename] "
-            elsif condition
+                # "anne, ... create task [taskname] in [workspacename] "
+            elsif queryText.match /create task/i
 
                 # Parse out taskName and workspaceName
-                return handleNewTask taskName, workspaceName
+                params = parseNewTask queryText
+                return handleNewTask params.taskName, params.workspaceName if params
 
             elsif condition
             # Story
                 # Single line
-                # "anne, ... post (first) [story] on [taskname] in (last) [workspacename]"
+                # "anne, ... post [story] on [taskname] in (last) [workspacename]"
 
                 # Parse out story, taskName, and workspaceName
-
-                return handleNewComment story, taskName, workspaceName
+                params = parseNewComment queryText
+                return handleNewComment params.story, params.taskName, params.workspaceName if params
             
-            elsif condition            
+            elsif queryText.match /complete/i            
             # Completion
                 # Single line
-                # "anne, ... complete (first) [taskname] in (last) [workspacename]"
+                # "anne, ... complete [taskname] in [workspacename]"
 
                 # Parse out taskName and workspaceName
-
-                return handleCompleteTask taskName, workspaceName
- 
-            else
-                # Default / Give up
-                return [(buildMessage message.from.stripped, "Anne: Sorry? Is there a way I can help?")]
+                params = parseCompleteTask queryText
+                return handleCompleteTask params.taskName, params.workspaceName if params
             end
+            
+            # Default / Give up
+            return [(buildMessage message.from.stripped, "Anne: Sorry? Is there a way I can help?")]
 
         end
 
