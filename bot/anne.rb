@@ -55,16 +55,21 @@ module Bot
         end
 
         # Creation parsing
-        def parseNewTask(queryText)
-
+        def parseTask(queryText)
+            # Tokenize
+            # Consume until 'create task'
+            # Push all
+            # Pop until in -> workspace name
+            # Pop rest     -> taskName
         end
 
-        def parseNewComment(queryText)
-
-        end
-
-        def parseCompleteTask(queryText)
-
+        def parseComment(queryText)
+            # Tokenize
+            # Consume until 'post comment'
+            # Push all
+            # Pop until in      -> workspace name
+            # Pop until on task -> taskname
+            # Pop rest          -> story
         end
 
         # Creation handle
@@ -123,16 +128,16 @@ module Bot
             elsif queryText.match /create task/i
 
                 # Parse out taskName and workspaceName
-                params = parseNewTask queryText
+                params = parseTask queryText
                 return handleNewTask params.taskName, params.workspaceName if params
 
             elsif condition
             # Story
                 # Single line
-                # "anne, ... post [story] on [taskname] in (last) [workspacename]"
+                # "anne, ... post comment [story] on task [taskname] in [workspacename]"
 
                 # Parse out story, taskName, and workspaceName
-                params = parseNewComment queryText
+                params = parseComment queryText
                 return handleNewComment params.story, params.taskName, params.workspaceName if params
             
             elsif queryText.match /complete/i            
@@ -141,7 +146,7 @@ module Bot
                 # "anne, ... complete [taskname] in [workspacename]"
 
                 # Parse out taskName and workspaceName
-                params = parseCompleteTask queryText
+                params = parseTask queryText
                 return handleCompleteTask params.taskName, params.workspaceName if params
             end
             
