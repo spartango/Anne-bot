@@ -47,7 +47,7 @@ module Bot
             maxscore = 0.0
             targetTask = nil
             matcher = Amatch::Jaro.new(taskName)
-            workspace.tasks.each do |task| 
+            workspace.tasks(Asana::User.me.id).each do |task| 
                 score = matcher.match task.name
                 if score > maxscore
                     targetTask = task
@@ -57,6 +57,18 @@ module Bot
 
             # TODO: Do we want to have a threshold for matches?
             return targetTask
+        end
+
+        def popAndBuild(stopWord, stack)
+            buffer = []
+            while not stack.empty?
+                word = stack.pop
+                if word == 'in'
+                    break
+                end
+                buffer.push word
+            end
+            return buffer.reverse.join(' ')
         end
 
         # Creation parsing
@@ -79,26 +91,10 @@ module Bot
             end
             
             # Pop until in    -> workspace name
-            workspaceBuffer = []
-            stack.reverse_each do |word|
-                if word == 'in'
-                    break
-                end
-
-                workspaceBuffer.push stack.pop
-            end
-            workspaceName = workspaceBuffer.reverse.join(' ')
+            workspaceName = popAndBuild 'in', stack
 
             # Pop until task  -> taskName
-            taskBuffer = []
-            stack.reverse_each do |word|
-                if word == 'task'
-                    break
-                end
-
-                taskBuffer.push stack.pop
-            end
-            taskName = taskBuffer.reverse.join(' ')
+            taskName = popAndBuild 'task', stack
             
             return nil if taskName == '' or workspaceName == ''
 
@@ -123,36 +119,12 @@ module Bot
             end
             
             # Pop until in    -> workspace name
-            workspaceBuffer = []
-            stack.reverse_each do |word|
-                if word == 'in'
-                    break
-                end
-
-                workspaceBuffer.push stack.pop
-            end
-            workspaceName = workspaceBuffer.reverse.join(' ')
+            workspaceName = popAndBuild 'in', stack
 
             # Pop until task  -> taskName
-            taskBuffer = []
-            stack.reverse_each do |word|
-                if word == 'on'
-                    break
-                end
+            taskName = popAndBuild 'task', stack
 
-                taskBuffer.push stack.pop
-            end
-            taskName = taskBuffer.reverse.join(' ')
-
-            storyBuffer = []
-            stack.reverse_each do |word|
-                if word == 'comment'
-                    break
-                end
-
-                storyBuffer.push stack.pop
-            end
-            story = storyBuffer.reverse.join(' ')
+            story = popAndBuild 'comment', stack
             
             return nil if taskName == '' or workspaceName == '' or story == ''
 
@@ -170,7 +142,7 @@ module Bot
         def handleNewComment(requester, commentText, taskName, workspaceName)
             workspace = findWorkspace workspaceName
             # Fuzzy search for task
-            task = findTask taskName workspace
+            task = findTask taskName, workspace
             # Create story task
             task.create_story(:text => commentText)
             return [(buildMessage requester, ("Anne: I've added a comment to "+workspace.name+" task, "+task.name))]
@@ -179,9 +151,9 @@ module Bot
         def handleCompleteTask(requester, taskName, workspaceName)
             workspace = findWorkspace workspaceName
             # Find task
-            task = findTask taskName workspace
+            task = findTask taskName, workspace
             # Update task
-            task.update_attributed(:completed, true)
+            task.update_attribute(:completed, true)
             return [(buildMessage requester, ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete."))]
         end
 
