@@ -202,14 +202,14 @@ module Bot
                         
             # Get all workspaces
             elsif queryText.match /list workspaces/i
+                @log.debug "[Anne]: Listing workspaces"
                 # List of workspaces
                 workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", your workspaces are: "+workspaces.join(', ')))] 
-
-            # Get specific workspace
             
             # Get all projects in given workspace
             elsif queryText.match /list projects in/i
+                @log.debug "[Anne]: Listing projects"
                 # Parse the workspace name
                 workspaceName = parseWorkspace queryText
                 # Find workspace
@@ -217,19 +217,23 @@ module Bot
                 projects  = workspace.projects.map { |project| project.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the projects in "+workspace.name+": "+projects.join(', ')))]    
             
+            # Get all users with access to a given workspace
+            elsif queryText.match /list users with access to/i
+                @log.debug "[Anne]: Listing users"
+                # Parse the workspace name
+                workspaceName = parseWorkspace queryText
+                # Find workspace
+                workspace = findWorkspace workspaceName
+                users     = workspace.users.map { |user| user.name }
+                return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the users with access to "+workspace.name+": "+users.join(', ')))]    
+            
             elsif queryText.match /list projects/i
                 projects = Asana::Project.all.map { |project| project.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are all of your projects: "+projects.join(', ')))]
         
-            
-            # Get all tasks in a given workspace associated with a specific user
-            
-            # Get all users with access to a given workspace
-
-            # Get a specific project (fuzzy search?)
-            
             # Get all tasks in a given workspace
             elsif queryText.match /list tasks in/i
+                @log.debug "[Anne]: Listing tasks for given workspace"
                 projectName  = parseWorkspace queryText
 
                 workspace = findWorkspace workspaceName
@@ -239,6 +243,7 @@ module Bot
 
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
+                @log.debug "[Anne]: Listing tasks for given project"
                 projectName  = parseProject queryText
 
                 project = findProject projectName
