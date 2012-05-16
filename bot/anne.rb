@@ -281,6 +281,9 @@ module Bot
                 return [(buildMessage message.from.stripped, "Anne: Hi "+senderName+"! I can *list* workspaces, tasks, or projects. "),
                         (buildMessage message.from.stripped, "Anne: I can also help *create tasks* or *complete tasks*, or *post comments*. "),
                         (buildMessage message.from.stripped, "Anne: I'm happy to be of service. ")]
+
+            elsif queryText.match /thank/i
+                return [(buildMessage message.from.stripped, "Anne: Not a problem, "+senderName)]
             end
             
             # Default / Give up
