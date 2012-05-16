@@ -11,7 +11,7 @@ module Bot
             Asana.configure do |client|
                 client.api_key = @apiKey
             end
-            
+
             @log       = Logger.new(STDOUT)
             @log.level = Logger::DEBUG
         end
@@ -160,29 +160,29 @@ module Bot
         end
 
         # Creation handle
-        def handleNewTask(taskName, workspaceName)
+        def handleNewTask(requester, taskName, workspaceName)
             workspace = findWorkspace workspaceName
             # Create task
             workspace.create_task(:name => taskName)
-            return [(buildMessage message.from.stripped, ("Anne: I've created the task, "+taskName+", in "+workspace.name))]
+            return [(buildMessage requester, ("Anne: I've created the task, "+taskName+", in "+workspace.name))]
         end       
 
-        def handleNewComment(commentText, taskName, workspaceName)
+        def handleNewComment(requester, commentText, taskName, workspaceName)
             workspace = findWorkspace workspaceName
             # Fuzzy search for task
             task = findTask taskName workspace
             # Create story task
             task.create_story(:text => commentText)
-            return [(buildMessage message.from.stripped, ("Anne: I've added a comment to "+workspace.name+" task, "+task.name))]
+            return [(buildMessage requester, ("Anne: I've added a comment to "+workspace.name+" task, "+task.name))]
         end
 
-        def handleCompleteTask(taskName, workspaceName)
+        def handleCompleteTask(requester, taskName, workspaceName)
             workspace = findWorkspace workspaceName
             # Find task
             task = findTask taskName workspace
             # Update task
             task.update_attributed(:completed, true)
-            return [(buildMessage message.from.stripped, ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete."))]
+            return [(buildMessage requester, ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete."))]
         end
 
         # Events
@@ -216,7 +216,7 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText, 'create'
-                return handleNewTask params[:taskName], params[:workspaceName] if params
+                return handleNewTask message.from.stripped, params[:taskName], params[:workspaceName] if params
 
             elsif condition
             # Story
@@ -225,7 +225,7 @@ module Bot
 
                 # Parse out story, taskName, and workspaceName
                 params = parseComment queryText
-                return handleNewComment params[:story], params[:taskName], params[:workspaceName] if params
+                return handleNewComment message.from.stripped, params[:story], params[:taskName], params[:workspaceName] if params
             
             elsif queryText.match /complete/i            
             # Completion
@@ -234,7 +234,7 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText, 'complete'
-                return handleCompleteTask params[:taskName], params[:workspaceName] if params
+                return handleCompleteTask message.from.stripped, params[:taskName], params[:workspaceName] if params
             end
             
             # Default / Give up
