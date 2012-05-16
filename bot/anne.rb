@@ -37,7 +37,7 @@ module Bot
                 end
             end
 
-            @log.debug "[Anne]: Found workspace: "+targetWorkspace.name+" -> "+maxscore
+            @log.debug "[Anne]: Found workspace: "+targetWorkspace.name
             # TODO: Do we want to have a threshold for matches?
             return targetWorkspace
         end
@@ -55,7 +55,7 @@ module Bot
                 end
             end
 
-            @log.debug "[Anne]: Found project: "+targetProject.name+" -> "+maxscore
+            @log.debug "[Anne]: Found project: "+targetProject.name
             # TODO: Do we want to have a threshold for matches?
             return targetProject
         end
@@ -73,7 +73,7 @@ module Bot
                 end
             end
             
-            @log.debug "[Anne]: Found Task: "+targetTask.name+" -> "+maxscore
+            @log.debug "[Anne]: Found Task: "+targetTask.name
             # TODO: Do we want to have a threshold for matches?
             return targetTask
         end
