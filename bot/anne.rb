@@ -37,7 +37,7 @@ module Bot
                 end
             end
 
-            log.debug "Found workspace: "+targetWorkspace.name+" -> "+maxscore
+            @log.debug "[Anne]: Found workspace: "+targetWorkspace.name+" -> "+maxscore
             # TODO: Do we want to have a threshold for matches?
             return targetWorkspace
         end
@@ -55,7 +55,7 @@ module Bot
                 end
             end
 
-            log.debug "Found project: "+targetProject.name+" -> "+maxscore
+            @log.debug "[Anne]: Found project: "+targetProject.name+" -> "+maxscore
             # TODO: Do we want to have a threshold for matches?
             return targetProject
         end
@@ -73,7 +73,7 @@ module Bot
                 end
             end
             
-            log.debug "Found Task: "+targetTask.name+" -> "+maxscore
+            @log.debug "[Anne]: Found Task: "+targetTask.name+" -> "+maxscore
             # TODO: Do we want to have a threshold for matches?
             return targetTask
         end
@@ -187,6 +187,7 @@ module Bot
 
             # Global
             if queryText.match /hey/i or queryText.match /hello/i or queryText.match /Hi/i
+                @log.debug "[Anne]: Responding to greeting"
                 # Just a greeting
                 return [(buildMessage message.from.stripped, ("Anne: Hello "+senderName))]
 
