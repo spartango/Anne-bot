@@ -25,7 +25,6 @@ module Bot
         # Asana interactions
 
         def findWorkspace(workspaceName) 
-
             # Fuzzy search for workspace
             maxscore = 0.0;
             targetWorkspace = nil
@@ -38,6 +37,7 @@ module Bot
                 end
             end
 
+            log.debug "Found workspace: "+targetWorkspace.name+" -> "+maxscore
             # TODO: Do we want to have a threshold for matches?
             return targetWorkspace
         end
@@ -54,7 +54,8 @@ module Bot
                     maxscore = score
                 end
             end
-
+            
+            log.debug "Found Task: "+targetTask.name+" -> "+maxscore
             # TODO: Do we want to have a threshold for matches?
             return targetTask
         end
@@ -63,7 +64,7 @@ module Bot
             buffer = []
             while not stack.empty?
                 word = stack.pop
-                if word == 'in'
+                if word == stopWord
                     break
                 end
                 buffer.push word
@@ -91,10 +92,8 @@ module Bot
             end
             
             # Pop until in    -> workspace name
-            workspaceName = popAndBuild 'in', stack
-
-            # Pop until task  -> taskName
-            taskName = popAndBuild 'task', stack
+            workspaceName = popAndBuild 'in',   stack
+            taskName      = popAndBuild 'task', stack
             
             return nil if taskName == '' or workspaceName == ''
 
@@ -119,12 +118,9 @@ module Bot
             end
             
             # Pop until in    -> workspace name
-            workspaceName = popAndBuild 'in', stack
-
-            # Pop until task  -> taskName
-            taskName = popAndBuild 'task', stack
-
-            story = popAndBuild 'comment', stack
+            workspaceName = popAndBuild 'in',      stack
+            taskName      = popAndBuild 'task',    stack
+            story         = popAndBuild 'comment', stack
             
             return nil if taskName == '' or workspaceName == '' or story == ''
 
@@ -158,12 +154,12 @@ module Bot
         end
 
         # Events
-
         def onStatus(fromNodeName)
             # Dont do anything on status
             return []
         end
 
+        # Query
         def onQuery(message)
             condition = false
             # Anne Queries
@@ -211,7 +207,6 @@ module Bot
             
             # Default / Give up
             return [(buildMessage message.from.stripped, "Anne: Sorry? Is there a way I can help?")]
-
         end
 
         def onMessage(message)
