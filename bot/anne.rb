@@ -95,7 +95,7 @@ module Bot
             end
             taskName = taskBuffer.reverse.join(' ')
             
-            return nil if taskName == '' or workspaceName = ''
+            return nil if taskName == '' or workspaceName == ''
 
             return { :workspaceName => workspaceName, :taskName => taskName }
         end
@@ -149,7 +149,7 @@ module Bot
             end
             story = storyBuffer.reverse.join(' ')
             
-            return nil if taskName == '' or workspaceName = '' or story = ''
+            return nil if taskName == '' or workspaceName == '' or story == ''
 
             return { :story => story, :workspaceName => workspaceName, :taskName => taskName }
         end
