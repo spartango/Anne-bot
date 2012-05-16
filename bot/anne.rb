@@ -90,6 +90,14 @@ module Bot
             return buffer.reverse.join(' ')
         end
 
+        def parseWorkspace(queryText)
+
+        end
+
+        def parseProject(queryText)
+
+        end
+
         # Creation parsing
         def parseTask(queryText, action)
             # Tokenize
@@ -179,7 +187,6 @@ module Bot
 
         # Query
         def onQuery(message)
-            condition = false
             # Anne Queries
             senderName = message.from.node.to_s
 
@@ -252,7 +259,7 @@ module Bot
                 params = parseTask queryText, 'create'
                 return handleNewTask message.from.stripped, params[:taskName], params[:workspaceName] if params
 
-            elsif condition
+            elsif queryText.match /post comment/i
             # Story
                 # Single line
                 # "anne, ... post comment [story] on task [taskname] in [workspacename]"
