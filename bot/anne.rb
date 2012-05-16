@@ -283,7 +283,7 @@ module Bot
                         (buildMessage message.from.stripped, "Anne: I'm happy to be of service. ")]
 
             elsif queryText.match /thank/i
-                return [(buildMessage message.from.stripped, "Anne: Not a problem, "+senderName)]
+                return [(buildMessage message.from.stripped, "Anne: No problem, "+senderName)]
             end
             
             # Default / Give up
