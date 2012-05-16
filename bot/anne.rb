@@ -204,7 +204,7 @@ module Bot
             elsif queryText.match /list workspaces/i
                 # List of workspaces
                 workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
-                return [(buildMessage message.from.stripped, ("Anne: Your workspaces are: "+workspaces.join(', ')))] 
+                return [(buildMessage message.from.stripped, ("Anne: "+senderName+", your workspaces are: "+workspaces.join(', ')))] 
 
             # Get specific workspace
             
@@ -215,11 +215,11 @@ module Bot
                 # Find workspace
                 workspace = findWorkspace workspaceName
                 projects  = workspace.projects.map { |project| project.name  }
-                return [(buildMessage message.from.stripped, ("Anne: Here are the projects in "+workspace.name+": "+projects.join(', ')))]    
+                return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the projects in "+workspace.name+": "+projects.join(', ')))]    
             
             elsif queryText.match /list projects/i
                 projects = Asana::Project.all.map { |project| project.name  }
-                return [(buildMessage message.from.stripped, ("Anne: Here are all of your projects: "+projects.join(', ')))]
+                return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are all of your projects: "+projects.join(', ')))]
         
             
             # Get all tasks in a given workspace associated with a specific user
@@ -235,7 +235,7 @@ module Bot
                 workspace = findWorkspace workspaceName
 
                 tasks = workspace.tasks(Asana::User.me.id)
-                return [(buildMessage message.from.stripped, ("Anne: Here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
+                return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
 
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
@@ -244,7 +244,7 @@ module Bot
                 project = findProject projectName
 
                 tasks = project.tasks
-                return [(buildMessage message.from.stripped, ("Anne: Here are the tasks for "+project.name+": "+tasks.join(', ')))]
+                return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks for "+project.name+": "+tasks.join(', ')))]
             
             # Get all stories for a given task
 
