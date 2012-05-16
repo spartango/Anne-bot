@@ -96,8 +96,8 @@ module Bot
             taskName = taskBuffer.reverse.join(' ')
             
             return nil if taskName == '' or workspaceName = ''
-            
-            return { 'workspaceName' => workspaceName, 'taskName' => taskName }
+
+            return { :workspaceName => workspaceName, :taskName => taskName }
         end
 
         def parseComment(queryText)
@@ -166,7 +166,7 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText
-                return handleNewTask params['taskName'], params['workspaceName'] if params
+                return handleNewTask params[:taskName], params[:workspaceName] if params
 
             elsif condition
             # Story
@@ -175,7 +175,7 @@ module Bot
 
                 # Parse out story, taskName, and workspaceName
                 params = parseComment queryText
-                return handleNewComment params['story'], params['taskName'], params['workspaceName'] if params
+                return handleNewComment params[:story], params[:taskName], params[:workspaceName] if params
             
             elsif queryText.match /complete/i            
             # Completion
@@ -184,7 +184,7 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText
-                return handleCompleteTask params['taskName'], params['workspaceName'] if params
+                return handleCompleteTask params[:taskName], params[:workspaceName] if params
             end
             
             # Default / Give up
