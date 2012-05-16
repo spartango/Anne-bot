@@ -55,7 +55,7 @@ module Bot
         end
 
         # Creation parsing
-        def parseTask(queryText)
+        def parseTask(queryText, action)
             # Tokenize
             parts = queryText.split(' ')
 
@@ -68,7 +68,7 @@ module Bot
                 if pushing
                     # Push all
                     stack.push word
-                elsif word == 'create'
+                elsif word == action
                     pushing = true
                 end
             end
@@ -104,8 +104,7 @@ module Bot
             # Tokenize
             parts = queryText.split(' ')
 
-            # Consume until 'create'
-            # This is a bit of a hack, iterator like behavior
+            # Consume until 'post'
             stack = []
 
             pushing = false
@@ -113,7 +112,7 @@ module Bot
                 if pushing
                     # Push all
                     stack.push word
-                elsif word == 'create'
+                elsif word == 'post'
                     pushing = true
                 end
             end
@@ -211,7 +210,7 @@ module Bot
             elsif queryText.match /create task/i
 
                 # Parse out taskName and workspaceName
-                params = parseTask queryText
+                params = parseTask queryText, 'create'
                 return handleNewTask params[:taskName], params[:workspaceName] if params
 
             elsif condition
@@ -226,10 +225,10 @@ module Bot
             elsif queryText.match /complete/i            
             # Completion
                 # Single line
-                # "anne, ... complete [taskname] in [workspacename]"
+                # "anne, ... complete task [taskname] in [workspacename]"
 
                 # Parse out taskName and workspaceName
-                params = parseTask queryText
+                params = parseTask queryText, 'complete'
                 return handleCompleteTask params[:taskName], params[:workspaceName] if params
             end
             
