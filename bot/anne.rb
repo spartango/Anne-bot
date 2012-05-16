@@ -102,11 +102,57 @@ module Bot
 
         def parseComment(queryText)
             # Tokenize
-            # Consume until 'post comment'
-            # Push all
-            # Pop until in      -> workspace name
-            # Pop until on task -> taskname
-            # Pop rest          -> story
+            parts = queryText.split(' ')
+
+            # Consume until 'create'
+            # This is a bit of a hack, iterator like behavior
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == 'create'
+                    pushing = true
+                end
+            end
+            
+            # Pop until in    -> workspace name
+            workspaceBuffer = []
+            stack.reverse_each do |word|
+                if word == 'in'
+                    break
+                end
+
+                workspaceBuffer.push stack.pop
+            end
+            workspaceName = workspaceBuffer.reverse.join(' ')
+
+            # Pop until task  -> taskName
+            taskBuffer = []
+            stack.reverse_each do |word|
+                if word == 'on'
+                    break
+                end
+
+                taskBuffer.push stack.pop
+            end
+            taskName = taskBuffer.reverse.join(' ')
+
+            storyBuffer = []
+            stack.reverse_each do |word|
+                if word == 'comment'
+                    break
+                end
+
+                storyBuffer.push stack.pop
+            end
+            story = storyBuffer.reverse.join(' ')
+            
+            return nil if taskName == '' or workspaceName = '' or story = ''
+
+            return { :story => story, :workspaceName => workspaceName, :taskName => taskName }
         end
 
         # Creation handle
