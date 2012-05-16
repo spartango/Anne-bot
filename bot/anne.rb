@@ -197,7 +197,7 @@ module Bot
             elsif queryText.match /list workspaces/i
                 # List of workspaces
                 workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
-                return [(buildMessage message.from.stripped, ("Anne: Your workspaces include: "+workspaces.join(', ')))] 
+                return [(buildMessage message.from.stripped, ("Anne: Your workspaces are: "+workspaces.join(', ')))] 
 
             # Get specific workspace
             
@@ -211,8 +211,8 @@ module Bot
                 return [(buildMessage message.from.stripped, ("Anne: Here are the projects in "+workspace.name+": "+projects.join(', ')))]    
             
             elsif queryText.match /list projects/i
-                projects = Asana::Project.all
-                return [(buildMessage message.from.stripped, ("Anne: Here are all of the projects: "+projects.join(', ')))]
+                projects = Asana::Project.all.map { |project| project.name  }
+                return [(buildMessage message.from.stripped, ("Anne: Here are all of your projects: "+projects.join(', ')))]
         
             
             # Get all tasks in a given workspace associated with a specific user
