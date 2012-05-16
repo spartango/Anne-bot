@@ -42,6 +42,24 @@ module Bot
             return targetWorkspace
         end
 
+        def findProject(projectName) 
+            # Fuzzy search for workspace
+            maxscore = 0.0;
+            targetProject = nil
+            matcher = Amatch::Jaro.new(projectName)
+            Asana::Project.all.each do |project| 
+                score = matcher.match project.name
+                if score > maxscore 
+                    targetProject = project
+                    maxscore = score
+                end
+            end
+
+            log.debug "Found project: "+targetProject.name+" -> "+maxscore
+            # TODO: Do we want to have a threshold for matches?
+            return targetProject
+        end
+
         def findTask(taskName, workspace)
             # Fetch tasks from workspace
             maxscore = 0.0
@@ -175,45 +193,52 @@ module Bot
             # Listing
                         
             # Get all workspaces
-            if queryText.match /get all workspaces/i
+            elsif queryText.match /list workspaces/i
                 # List of workspaces
-                workspaces = Asana::Workspace.all
-                return [(buildMessage message.from.stripped, ("Anne: Your workspaces include: "+workspaces))] 
+                workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
+                return [(buildMessage message.from.stripped, ("Anne: Your workspaces include: "+workspaces.join(', ')))] 
 
             # Get specific workspace
             
             # Get all projects in given workspace
-            if queryText.match /get projects in X/i
-                X = workspace_id
-                workspace = Asana::Workspace.find(:workspace_id)
-                # TODO what if no such workspace_id
-                projects = workspace.projects
-                return [(buildMessage message.from.stripped, ("Anne: Here are the projects in that workspace: "+projects))]
+            elsif queryText.match /list projects in/i
+                # Parse the workspace name
+                workspaceName = parseWorkspace queryText
+                # Find workspace
+                workspace = findWorkspace workspaceName
+                projects  = workspace.projects.map { |project| project.name  }
+                return [(buildMessage message.from.stripped, ("Anne: Here are the projects in "+workspace.name+": "+projects.join(', ')))]    
             
-            # Get all tasks in a given workspace
+            elsif queryText.match /list projects/i
+                projects = Asana::Project.all
+                return [(buildMessage message.from.stripped, ("Anne: Here are all of the projects: "+projects.join(', ')))]
+        
             
             # Get all tasks in a given workspace associated with a specific user
             
             # Get all users with access to a given workspace
-            
-            # Get all projects
-            
+
             # Get a specific project (fuzzy search?)
-                
+            
+            # Get all tasks in a given workspace
+            elsif queryText.match /list tasks in/i
+                projectName  = parseWorkspace queryText
+
+                workspace = findWorkspace workspaceName
+
+                tasks = workspace.tasks(Asana::User.me.id)
+                return [(buildMessage message.from.stripped, ("Anne: Here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
+
             # Get all tasks in a given project
-            if queryText.match /get tasks in X/i
-                X = project_id
-                project = Asana::Project.find(:project_id)
-                # TODO what if no such project_id?
+            elsif queryText.match /list tasks for/i
+                projectName  = parseProject queryText
+
+                project = findProject projectName
+
                 tasks = project.tasks
-                return [(buildMessage message.from.stripped, ("Anne: Here are the tasks for that project: "+tasks))]
+                return [(buildMessage message.from.stripped, ("Anne: Here are the tasks for "+project.name+": "+tasks.join(', ')))]
             
             # Get all stories for a given task
-            #if queryText.match /get all stories for X/i
-            #    X = 
-            #    task = tasks.first
-            #    stories = task.stories
-            # Get a specific story
 
             # Creation 
 
