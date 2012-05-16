@@ -57,10 +57,47 @@ module Bot
         # Creation parsing
         def parseTask(queryText)
             # Tokenize
-            # Consume until 'create task'
-            # Push all
-            # Pop until in -> workspace name
-            # Pop rest     -> taskName
+            parts = queryText.split(' ')
+
+            # Consume until 'create'
+            # This is a bit of a hack, iterator like behavior
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == 'create'
+                    pushing = true
+                end
+            end
+            
+            # Pop until in    -> workspace name
+            workspaceBuffer = []
+            stack.reverse_each do |word|
+                if word == 'in'
+                    break
+                end
+
+                workspaceBuffer.push stack.pop
+            end
+            workspaceName = workspaceBuffer.reverse.join(' ')
+
+            # Pop until task  -> taskName
+            taskBuffer = []
+            stack.reverse_each do |word|
+                if word == 'task'
+                    break
+                end
+
+                taskBuffer.push stack.pop
+            end
+            taskName = taskBuffer.reverse.join(' ')
+            
+            return nil if taskName == '' or workspaceName = ''
+            
+            return { 'workspaceName' => workspaceName, 'taskName' => taskName }
         end
 
         def parseComment(queryText)
@@ -129,7 +166,7 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText
-                return handleNewTask params.taskName, params.workspaceName if params
+                return handleNewTask params['taskName'], params['workspaceName'] if params
 
             elsif condition
             # Story
@@ -138,7 +175,7 @@ module Bot
 
                 # Parse out story, taskName, and workspaceName
                 params = parseComment queryText
-                return handleNewComment params.story, params.taskName, params.workspaceName if params
+                return handleNewComment params['story'], params['taskName'], params['workspaceName'] if params
             
             elsif queryText.match /complete/i            
             # Completion
@@ -147,7 +184,7 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText
-                return handleCompleteTask params.taskName, params.workspaceName if params
+                return handleCompleteTask params['taskName'], params['workspaceName'] if params
             end
             
             # Default / Give up
