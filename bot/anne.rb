@@ -145,7 +145,7 @@ module Bot
             task = findTask taskName, workspace
             # Create story task
             task.create_story(:text => commentText)
-            return [(buildMessage requester, ("Anne: I've added a comment to "+workspace.name+" task, "+task.name))]
+            return [(buildMessage requester, ("Anne: I've added a comment to the "+workspace.name+" task, "+task.name))]
         end
 
         def handleCompleteTask(requester, taskName, workspaceName)
@@ -154,7 +154,7 @@ module Bot
             task = findTask taskName, workspace
             # Update task
             task.update_attribute(:completed, true)
-            return [(buildMessage requester, ("Anne: I've marked "+workspace.name+" task, "+task.name+", complete."))]
+            return [(buildMessage requester, ("Anne: I've marked the "+workspace.name+" task, "+task.name+", complete."))]
         end
 
         # Events
