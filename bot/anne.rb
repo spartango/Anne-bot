@@ -91,10 +91,34 @@ module Bot
         end
 
         def parseWorkspace(queryText)
+            # Tokenize
+            parts = queryText.split(' ')
+
+            # Consume until 'in'
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == 'in'
+                    pushing = true
+                end
+            end
+
+            # Pop until in -> workspace name
+            workspaceName = popAndBuild 'in',   stack
+
+            return nil if workspaceName == ''
+
+            return { :workspaceName => workspaceName }
 
         end
 
         def parseProject(queryText)
+            # Tokenize
+            parts = queryText.split(' ')
 
         end
 
