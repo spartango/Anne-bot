@@ -6,6 +6,11 @@ module Bot
     class Anne 
         def initialize(apiKey)
             @apiKey    = apiKey
+
+            Asana.configure do |client|
+                client.api_key = @apiKey
+            end
+            
             @log       = Logger.new(STDOUT)
             @log.level = Logger::DEBUG
         end
