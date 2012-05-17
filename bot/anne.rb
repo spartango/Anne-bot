@@ -215,17 +215,10 @@ module Bot
             senderName = message.from.node.to_s
 
             queryText = message.body # Strip the Anne part out
-
-            # Global
-            if queryText.match /hey/i or queryText.match /hello/i or queryText.match /Hi/i
-                @log.debug "[Anne]: Responding to greeting"
-                # Just a greeting
-                return [(buildMessage message.from.stripped, ("Anne: Hello "+senderName))]
-
             # Listing
                         
             # Get all workspaces
-            elsif queryText.match /list workspaces/i
+            if queryText.match /list workspaces/i
                 @log.debug "[Anne]: Listing workspaces"
                 # List of workspaces
                 workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
