@@ -283,7 +283,7 @@ module Bot
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the projects in "+workspace.name+": "+projects.join(', ')))]    
             
             # Get all users with access to a given workspace
-            elsif queryText.match /list users with access to/i
+            elsif queryText.match /list users in/i
                 @log.debug "[Anne]: Listing users"
                 # Parse the workspace name
                 workspaceName = parseWorkspace queryText
@@ -307,7 +307,7 @@ module Bot
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
 
             # Get all tasks in a given project
-            elsif queryText.match /list tasks for/i
+            elsif queryText.match /list tasks for project/i
                 @log.debug "[Anne]: Listing tasks for given project"
                 projectName  = parseProject queryText
 
