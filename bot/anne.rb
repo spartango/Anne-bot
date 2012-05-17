@@ -235,6 +235,7 @@ module Bot
             senderName = message.from.node.to_s
 
             queryText = message.body # Strip the Anne part out
+            
             # Listing
                         
             # Get all workspaces
@@ -287,8 +288,6 @@ module Bot
 
                 tasks = project.tasks
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks for "+project.name+": "+tasks.join(', ')))]
-            
-            # Get all stories for a given task
 
             # Creation 
 
