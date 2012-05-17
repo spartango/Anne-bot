@@ -90,7 +90,7 @@ module Bot
             return buffer.reverse.join(' ')
         end
 
-        def parseWorkspace(queryText)
+        def parseSingle(queryText, startWord, stopWord)
             # Tokenize
             parts = queryText.split(' ')
 
@@ -102,43 +102,17 @@ module Bot
                 if pushing
                     # Push all
                     stack.push word
-                elsif word == 'in'
+                elsif word == startWord
                     pushing = true
                 end
             end
 
             # Pop until in -> workspace name
-            workspaceName = popAndBuild 'in',   stack
+            name = popAndBuild stopWord, stack
 
-            return nil if workspaceName == ''
+            return nil if name == ''
 
-            return { :workspaceName => workspaceName }
-
-        end
-
-        def parseProject(queryText)
-            # Tokenize
-            parts = queryText.split(' ')
-
-            # Consume until 'in'
-            stack = []
-
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == 'project'
-                    pushing = true
-                end
-            end
-
-            # Pop until project -> project name
-            projectName = popAndBuild 'project',   stack
-
-            return nil if projectName == ''
-
-            return { :projectName => projectName }
+            return name 
 
         end
 
@@ -249,17 +223,17 @@ module Bot
             elsif queryText.match /list projects in/i
                 @log.debug "[Anne]: Listing projects"
                 # Parse the workspace name
-                workspaceName = parseWorkspace queryText
+                workspaceName = parseSingle queryText, 'projects', 'in'
                 # Find workspace
                 workspace = findWorkspace workspaceName
                 projects  = workspace.projects.map { |project| project.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the projects in "+workspace.name+": "+projects.join(', ')))]    
             
             # Get all users with access to a given workspace
-            elsif queryText.match /list users with access to/i
+            elsif queryText.match /list users in/i
                 @log.debug "[Anne]: Listing users"
                 # Parse the workspace name
-                workspaceName = parseWorkspace queryText
+                workspaceName = parseSingle queryText, 'users', 'in'
                 # Find workspace
                 workspace = findWorkspace workspaceName
                 users     = workspace.users.map { |user| user.name }
@@ -271,8 +245,8 @@ module Bot
         
             # Get all tasks in a given workspace
             elsif queryText.match /list tasks in/i
-                @log.debug "[Anne]: Listing tasks for given workspace"
-                projectName  = parseWorkspace queryText
+                @log.debug "[Anne]: Listing tasks in a given workspace"
+                projectName  = parseSingle queryText, 'tasks', 'in'
 
                 workspace = findWorkspace workspaceName
 
@@ -282,7 +256,7 @@ module Bot
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
                 @log.debug "[Anne]: Listing tasks for given project"
-                projectName  = parseProject queryText
+                projectName  = parseSingle queryText, 'tasks', 'for'
 
                 project = findProject projectName
 
