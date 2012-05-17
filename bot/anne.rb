@@ -120,6 +120,26 @@ module Bot
             # Tokenize
             parts = queryText.split(' ')
 
+            # Consume until 'in'
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == 'project'
+                    pushing = true
+                end
+            end
+
+            # Pop until project -> project name
+            projectName = popAndBuild 'project',   stack
+
+            return nil if projectName == ''
+
+            return { :projectName => projectName }
+
         end
 
         # Creation parsing
