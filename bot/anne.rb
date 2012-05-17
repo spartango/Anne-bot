@@ -94,7 +94,7 @@ module Bot
             # Tokenize
             parts = queryText.split(' ')
 
-            # Consume until 'in'
+            # Consume until stopWord
             stack = []
 
             pushing = false
@@ -107,13 +107,10 @@ module Bot
                 end
             end
 
-            # Pop until in -> workspace name
-            name = popAndBuild stopWord, stack
+            # Pop until stopWord -> workspace name
+            name = popAndBuild keyword,   stack
 
-            return nil if name == ''
-
-            return name 
-
+            return name
         end
 
         # Creation parsing
