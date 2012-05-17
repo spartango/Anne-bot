@@ -8,17 +8,17 @@ A Google Talk Robot with Eyes on Asana
 Install 
 -------
 
-Anne uses bundler to get his deps. 
-Use 'bundle install' to set things up
+Anne uses bundler to get her deps. 
+Use 'bundle install' to set things up.
 
-You'll need to provide gtalk credentials for Anne:
+You'll need to provide Gtalk credentials for Anne:
 
-Fill in 
+Fill in: 
 botUsername = ''
 botPassword = ''
 in bot/mcore.rb
 
-You can customise malcolm's behavior in malcolm.rb
+You can customise Anne's behavior in anne.rb
 
 Run
 ---
@@ -31,5 +31,5 @@ Anne something perfectly suitable for use on Heroku.
 Usage
 -----
 
-Anne needs your asana API key before you can use her...
-Checkout http://developer.asana.com
+Anne needs your Asana API key before you can use her.
+Check out http://developer.asana.com
