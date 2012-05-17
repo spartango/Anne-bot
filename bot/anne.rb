@@ -90,11 +90,11 @@ module Bot
             return buffer.reverse.join(' ')
         end
 
-        def parseWorkspace(queryText)
+        def simpleParser(keyword)
             # Tokenize
             parts = queryText.split(' ')
 
-            # Consume until 'in'
+            # Consume until stopWord
             stack = []
 
             pushing = false
@@ -102,13 +102,38 @@ module Bot
                 if pushing
                     # Push all
                     stack.push word
-                elsif word == 'in'
+                elsif word == keyword
                     pushing = true
                 end
             end
 
+            # Pop until stopWord -> workspace name
+            name = popAndBuild keyword,   stack
+
+            return name
+        end
+
+        def parseWorkspace(queryText)
+            # Tokenize
+            #parts = queryText.split(' ')
+
+            # Consume until 'in'
+            #stack = []
+
+            #pushing = false
+            #parts.each do |word|
+            #    if pushing
+            #        # Push all
+            #        stack.push word
+            #    elsif word == 'in'
+            #        pushing = true
+            #    end
+            #end
+
             # Pop until in -> workspace name
-            workspaceName = popAndBuild 'in',   stack
+            #workspaceName = popAndBuild 'in',   stack
+
+            workspaceName = simpleParser 'in'
 
             return nil if workspaceName == ''
 
@@ -118,23 +143,25 @@ module Bot
 
         def parseProject(queryText)
             # Tokenize
-            parts = queryText.split(' ')
+            #parts = queryText.split(' ')
 
             # Consume until 'in'
-            stack = []
+            #stack = []
 
-            pushing = false
-            parts.each do |word|
-                if pushing
+            #pushing = false
+            #parts.each do |word|
+            #    if pushing
                     # Push all
-                    stack.push word
-                elsif word == 'project'
-                    pushing = true
-                end
-            end
+            #        stack.push word
+            #    elsif word == 'project'
+            #        pushing = true
+            #    end
+            #end
 
             # Pop until project -> project name
-            projectName = popAndBuild 'project',   stack
+            #projectName = popAndBuild 'project',   stack
+
+            projectName = simpleParser 'project'
 
             return nil if projectName == ''
 
