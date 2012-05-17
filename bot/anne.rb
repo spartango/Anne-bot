@@ -251,7 +251,7 @@ module Bot
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
 
             # Get all tasks in a given project
-            elsif queryText.match /list tasks for/i
+            elsif queryText.match /list tasks for project/i
                 @log.debug "[Anne]: Listing tasks for given project"
                 projectName  = parseSingle queryText, 'tasks', 'for'
 
