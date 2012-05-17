@@ -108,7 +108,7 @@ module Bot
             end
 
             # Pop until stopWord -> workspace name
-            name = popAndBuild keyword,   stack
+            name = popAndBuild stopWord, stack
 
             return name
         end
@@ -243,7 +243,7 @@ module Bot
             # Get all tasks in a given workspace
             elsif queryText.match /list tasks in/i
                 @log.debug "[Anne]: Listing tasks in a given workspace"
-                projectName  = parseSingle queryText, 'tasks', 'in'
+                workspaceName  = parseSingle queryText, 'tasks', 'in'
 
                 workspace = findWorkspace workspaceName
 
