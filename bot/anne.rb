@@ -247,7 +247,8 @@ module Bot
 
                 workspace = findWorkspace workspaceName
 
-                tasks = workspace.tasks(Asana::User.me.id).map { |task| task.name  }
+                incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| task.complete  }
+                tasks = incompleteTasks.map { |task| task.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
 
             # Get all tasks in a given project
@@ -257,7 +258,8 @@ module Bot
 
                 project = findProject projectName
 
-                tasks = project.tasks.map { |task| task.name  }
+                incompleteTasks = project.tasks.select { |task| task.complete  }
+                tasks = incompleteTasks.map { |task| task.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks for "+project.name+": "+tasks.join(', ')))]
 
             # Creation 
