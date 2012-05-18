@@ -247,7 +247,7 @@ module Bot
 
                 workspace = findWorkspace workspaceName
 
-                incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| task.complete  }
+                incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| not Asana::Task.find(task.id).completed }
                 tasks = incompleteTasks.map { |task| task.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
 
@@ -258,10 +258,9 @@ module Bot
 
                 project = findProject projectName
 
-                incompleteTasks = project.tasks.select { |task| task.complete  }
+                incompleteTasks = project.tasks.select { |task| not Asana::Task.find(task.id).completed }
                 tasks = incompleteTasks.map { |task| task.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks for "+project.name+": "+tasks.join(', ')))]
-
             # Creation 
 
             # Tasks must have associated workspace
@@ -292,14 +291,17 @@ module Bot
                 return handleCompleteTask message.from.stripped, params[:taskName], params[:workspaceName] if params
 
             elsif queryText.match /help/i
-                return [(buildMessage message.from.stripped, "Anne: Hi "+senderName+"! I can *list* workspaces, tasks, or projects. "),
-                        (buildMessage message.from.stripped, "Anne: I can also help *create tasks* or *complete tasks*, or *post comments*. "),
-                        (buildMessage message.from.stripped, "Anne: I'm happy to be of service. ")]
+                sender = message.from.stripped
+                return [(buildMessage sender, "Anne: Hi "+senderName+"! I can *list* workspaces, tasks, or projects. "),
+                        (buildMessage sender, "Anne: I can also help *create tasks* or *complete tasks*, or *post comments*. "),
+                        (buildMessage sender, "Anne: I'm happy to be of service. ")]
 
             elsif queryText.match /thank/i
                 return [(buildMessage message.from.stripped, "Anne: No problem, "+senderName)]
-            end
             
+            elsif queryText.match /hi/i or queryText.match /hello/i or queryText.match /hey/i
+                return [(buildMessage message.from.stripped, "Anne: Hello, "+senderName)]
+            end  
             # Default / Give up
             return [(buildMessage message.from.stripped, "Anne: Sorry? Is there a way I can help?")]
         end
