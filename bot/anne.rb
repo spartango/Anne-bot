@@ -26,7 +26,7 @@ module Bot
 
         def findWorkspace(workspaceName) 
             # Fuzzy search for workspace
-            maxscore = 0.0;
+            maxscore = -0.1
             targetWorkspace = nil
             matcher = Amatch::Jaro.new(workspaceName)
             Asana::Workspace.all.each do |workspace| 
@@ -44,7 +44,7 @@ module Bot
 
         def findProject(projectName) 
             # Fuzzy search for workspace
-            maxscore = 0.0;
+            maxscore = -0.1
             targetProject = nil
             matcher = Amatch::Jaro.new(projectName)
             Asana::Project.all.each do |project| 
@@ -62,7 +62,7 @@ module Bot
 
         def findTask(taskName, workspace)
             # Fetch tasks from workspace
-            maxscore = 0.0
+            maxscore = -0.1
             targetTask = nil
             matcher = Amatch::Jaro.new(taskName)
             workspace.tasks(Asana::User.me.id).each do |task| 
@@ -212,6 +212,7 @@ module Bot
             # Get all workspaces
             if queryText.match /list workspaces/i
                 @log.debug "[Anne]: Listing workspaces"
+
                 # List of workspaces
                 workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", your workspaces are: "+workspaces.join(', ')))] 
@@ -221,6 +222,9 @@ module Bot
                 @log.debug "[Anne]: Listing projects"
                 # Parse the workspace name
                 workspaceName = parseSingle queryText, 'projects', 'in'
+
+                yield (buildMessage message.from.stripped, "Anne: Give me a moment...")
+
                 # Find workspace
                 workspace = findWorkspace workspaceName
                 projects  = workspace.projects.map { |project| project.name  }
@@ -231,6 +235,9 @@ module Bot
                 @log.debug "[Anne]: Listing users"
                 # Parse the workspace name
                 workspaceName = parseSingle queryText, 'users', 'in'
+
+                yield (buildMessage message.from.stripped, "Anne: Hold on please...")
+
                 # Find workspace
                 workspace = findWorkspace workspaceName
                 users     = workspace.users.map { |user| user.name }
@@ -247,6 +254,8 @@ module Bot
 
                 workspace = findWorkspace workspaceName
 
+                yield (buildMessage message.from.stripped, "Anne: Hold on a sec...")
+
                 incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| not Asana::Task.find(task.id).completed }
                 tasks = incompleteTasks.map { |task| task.name  }
                 return [(buildMessage message.from.stripped, ("Anne: "+senderName+", here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
@@ -257,6 +266,8 @@ module Bot
                 projectName  = parseSingle queryText, 'tasks', 'for'
 
                 project = findProject projectName
+
+                yield (buildMessage message.from.stripped, "Anne: Hold on a sec...")
 
                 incompleteTasks = project.tasks.select { |task| not Asana::Task.find(task.id).completed }
                 tasks = incompleteTasks.map { |task| task.name  }
@@ -270,6 +281,9 @@ module Bot
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText, 'create'
+
+                yield (buildMessage message.from.stripped, "Anne: I'm on it...")
+
                 return handleNewTask message.from.stripped, params[:taskName], params[:workspaceName] if params
 
             elsif queryText.match /post comment/i
@@ -279,12 +293,17 @@ module Bot
 
                 # Parse out story, taskName, and workspaceName
                 params = parseComment queryText
+
+                yield (buildMessage message.from.stripped, "Anne: Working on that post...")
+
                 return handleNewComment message.from.stripped, params[:story], params[:taskName], params[:workspaceName] if params
             
             elsif queryText.match /complete/i            
             # Completion
                 # Single line
                 # "anne, ... complete task [taskname] in [workspacename]"
+
+                yield (buildMessage message.from.stripped, "Anne: I'm on it")
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText, 'complete'
@@ -306,11 +325,11 @@ module Bot
             return [(buildMessage message.from.stripped, "Anne: Sorry? Is there a way I can help?")]
         end
 
-        def onMessage(message)
+        def onMessage(message, &onProgress)
             # Query handling
             queryMsgs = []
             if message.body.match /Anne/i 
-                queryMsgs = onQuery(message)
+                queryMsgs = onQuery message, &onProgress
             end
 
             return queryMsgs
