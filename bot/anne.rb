@@ -1,6 +1,7 @@
 require 'logger'
 require 'blather/stanza/message'
 require 'asana'
+require 'amatch'
 
 module Bot
     class Anne 
@@ -10,42 +11,331 @@ module Bot
             Asana.configure do |client|
                 client.api_key = @apiKey
             end
-            
+
             @log       = Logger.new(STDOUT)
             @log.level = Logger::DEBUG
         end
+
+        # Messaging
 
         def buildMessage(user, body) 
             return Blather::Stanza::Message.new user, body
         end
 
+        # Asana interactions
+
+        def findWorkspace(workspaceName) 
+            # Fuzzy search for workspace
+            maxscore = -0.1
+            targetWorkspace = nil
+            matcher = Amatch::Jaro.new(workspaceName)
+            Asana::Workspace.all.each do |workspace| 
+                score = matcher.match workspace.name
+                if score > maxscore 
+                    targetWorkspace = workspace
+                    maxscore = score
+                end
+            end
+
+            @log.debug "[Anne]: Found workspace: "+targetWorkspace.name
+            # TODO: Do we want to have a threshold for matches?
+            return targetWorkspace
+        end
+
+        def findProject(projectName) 
+            # Fuzzy search for workspace
+            maxscore = -0.1
+            targetProject = nil
+            matcher = Amatch::Jaro.new(projectName)
+            Asana::Project.all.each do |project| 
+                score = matcher.match project.name
+                if score > maxscore 
+                    targetProject = project
+                    maxscore = score
+                end
+            end
+
+            @log.debug "[Anne]: Found project: "+targetProject.name
+            # TODO: Do we want to have a threshold for matches?
+            return targetProject
+        end
+
+        def findTask(taskName, workspace)
+            # Fetch tasks from workspace
+            maxscore = -0.1
+            targetTask = nil
+            matcher = Amatch::Jaro.new(taskName)
+            workspace.tasks(Asana::User.me.id).each do |task| 
+                score = matcher.match task.name
+                if score > maxscore
+                    targetTask = task
+                    maxscore = score
+                end
+            end
+            
+            @log.debug "[Anne]: Found Task: "+targetTask.name
+            # TODO: Do we want to have a threshold for matches?
+            return targetTask
+        end
+
+        def popAndBuild(stopWord, stack)
+            buffer = []
+            while not stack.empty?
+                word = stack.pop
+                if word == stopWord
+                    break
+                end
+                buffer.push word
+            end
+            return buffer.reverse.join(' ')
+        end
+
+        def parseSingle(queryText, startWord, stopWord)
+            # Tokenize
+            parts = queryText.split(' ')
+
+            # Consume until stopWord
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == startWord
+                    pushing = true
+                end
+            end
+
+            # Pop until stopWord -> workspace name
+            name = popAndBuild stopWord, stack
+
+            return name
+        end
+
+        # Creation parsing
+        def parseTask(queryText, action)
+            # Tokenize
+            parts = queryText.split(' ')
+
+            # Consume until 'create'
+            # This is a bit of a hack, iterator like behavior
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == action
+                    pushing = true
+                end
+            end
+            
+            # Pop until in    -> workspace name
+            workspaceName = popAndBuild 'in',   stack
+            taskName      = popAndBuild 'task', stack
+            
+            return nil if taskName == '' or workspaceName == ''
+
+            return { :workspaceName => workspaceName, :taskName => taskName }
+        end
+
+        def parseComment(queryText)
+            # Tokenize
+            parts = queryText.split(' ')
+
+            # Consume until 'post'
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == 'post'
+                    pushing = true
+                end
+            end
+            
+            # Pop until in    -> workspace name
+            workspaceName = popAndBuild 'in',      stack
+            taskName      = popAndBuild 'task',    stack
+            story         = popAndBuild 'comment', stack
+            
+            return nil if taskName == '' or workspaceName == '' or story == ''
+
+            return { :story => story, :workspaceName => workspaceName, :taskName => taskName }
+        end
+
+        # Creation handle
+        def handleNewTask(requester, taskName, workspaceName)
+            workspace = findWorkspace workspaceName
+            # Create task
+            workspace.create_task(:name => taskName)
+            return [(buildMessage requester, ("I've created the task, "+taskName+", in "+workspace.name))]
+        end       
+
+        def handleNewComment(requester, commentText, taskName, workspaceName)
+            workspace = findWorkspace workspaceName
+            # Fuzzy search for task
+            task = findTask taskName, workspace
+            # Create story task
+            task.create_story(:text => commentText)
+            return [(buildMessage requester, ("I've added a comment to the "+workspace.name+" task, "+task.name))]
+        end
+
+        def handleCompleteTask(requester, taskName, workspaceName)
+            workspace = findWorkspace workspaceName
+            # Find task
+            task = findTask taskName, workspace
+            # Update task
+            task.update_attribute(:completed, true)
+            return [(buildMessage requester, ("I've marked the "+workspace.name+" task, "+task.name+", complete."))]
+        end
+
+        # Events
         def onStatus(fromNodeName)
             # Dont do anything on status
             return []
         end
 
+        # Query
         def onQuery(message)
             # Anne Queries
             senderName = message.from.node.to_s
 
-            # TODO handle Asana queries
+            queryText = message.body # Strip the Anne part out
+            
+            # Listing
+                        
+            # Get all workspaces
+            if queryText.match /list workspaces/i
+                @log.debug "[Anne]: Listing workspaces"
 
-            # Global
-            if message.body.match /hey/i or message.body.match /hello/i
-                # Just a greeting
-                return buildMessage message.from.stripped ("Anne: Hello "+senderName)
-            else
-                # Default / Give up
-                return buildMessage message.from.stripped ("Anne: Sorry "+senderName+", I can't help you with that.")
-            end
+                # List of workspaces
+                workspaces = Asana::Workspace.all.map { |workspace| workspace.name  }
+                return [(buildMessage message.from.stripped, ("Your workspaces are: "+workspaces.join(', ')))] 
+            
+            # Get all projects in given workspace
+            elsif queryText.match /list projects in/i
+                @log.debug "[Anne]: Listing projects"
+                # Parse the workspace name
+                workspaceName = parseSingle queryText, 'projects', 'in'
 
+                yield (buildMessage message.from.stripped, "Give me a moment...")
+
+                # Find workspace
+                workspace = findWorkspace workspaceName
+                projects  = workspace.projects.map { |project| project.name  }
+                return [(buildMessage message.from.stripped, ("Here are the projects in "+workspace.name+": "+projects.join(', ')))]    
+            
+            # Get all users with access to a given workspace
+            elsif queryText.match /list users in/i
+                @log.debug "[Anne]: Listing users"
+                # Parse the workspace name
+                workspaceName = parseSingle queryText, 'users', 'in'
+
+                yield (buildMessage message.from.stripped, "Hold on please...")
+
+                # Find workspace
+                workspace = findWorkspace workspaceName
+                users     = workspace.users.map { |user| user.name }
+                return [(buildMessage message.from.stripped, ("Here are the users with access to "+workspace.name+": "+users.join(', ')))]    
+            
+            elsif queryText.match /list projects/i
+                projects = Asana::Project.all.map { |project| project.name  }
+                return [(buildMessage message.from.stripped, ("Here are all of your projects: "+projects.join(', ')))]
+        
+            # Get all tasks in a given workspace
+            elsif queryText.match /list tasks in/i
+                @log.debug "[Anne]: Listing tasks in a given workspace"
+                workspaceName  = parseSingle queryText, 'tasks', 'in'
+
+                workspace = findWorkspace workspaceName
+
+                yield (buildMessage message.from.stripped, "Hold on a sec...")
+
+                incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| not Asana::Task.find(task.id).completed }
+                tasks = incompleteTasks.map { |task| task.name  }
+                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
+
+            # Get all tasks in a given project
+            elsif queryText.match /list tasks for/i
+                @log.debug "[Anne]: Listing tasks for given project"
+                projectName  = parseSingle queryText, 'tasks', 'for'
+
+                project = findProject projectName
+
+                yield (buildMessage message.from.stripped, "Hold on a sec...")
+
+                incompleteTasks = project.tasks.select { |task| not Asana::Task.find(task.id).completed }
+                tasks = incompleteTasks.map { |task| task.name  }
+                return [(buildMessage message.from.stripped, ("Here are the tasks for "+project.name+": "+tasks.join(', ')))]
+            # Creation 
+
+            # Tasks must have associated workspace
+                # Single line
+                # "anne, ... create task [taskname] in [workspacename] "
+            elsif queryText.match /create task/i
+
+                # Parse out taskName and workspaceName
+                params = parseTask queryText, 'create'
+
+                yield (buildMessage message.from.stripped, "I'm on it...")
+
+                return handleNewTask message.from.stripped, params[:taskName], params[:workspaceName] if params
+
+                return [(buildMessage message.from.stripped, "Sorry, I couldn't create the task.")] # onError
+
+            elsif queryText.match /post comment/i
+            # Story
+                # Single line
+                # "anne, ... post comment [story] on task [taskname] in [workspacename]"
+
+                # Parse out story, taskName, and workspaceName
+                params = parseComment queryText
+
+                yield (buildMessage message.from.stripped, "Working on that post...")
+
+                return handleNewComment message.from.stripped, params[:story], params[:taskName], params[:workspaceName] if params
+                
+                return [(buildMessage message.from.stripped, "Sorry, I couldn't post the comment.")] # onError
+
+            elsif queryText.match /complete/i            
+            # Completion
+                # Single line
+                # "anne, ... complete task [taskname] in [workspacename]"
+
+                yield (buildMessage message.from.stripped, "I'm on it")
+
+                # Parse out taskName and workspaceName
+                params = parseTask queryText, 'complete'
+                return handleCompleteTask message.from.stripped, params[:taskName], params[:workspaceName] if params
+
+                return [(buildMessage message.from.stripped, "Sorry, I couldn't complete the task.")] # onError
+
+            elsif queryText.match /help/i
+                sender = message.from.stripped
+                return [(buildMessage sender, "Hi! I can *list* workspaces, tasks, or projects. "),
+                        (buildMessage sender, "I can also help *create tasks* or *complete tasks*, or *post comments*. "),
+                        (buildMessage sender, "I'm happy to be of service. ")]
+
+            elsif queryText.match /thank/i
+                return [(buildMessage message.from.stripped, "No problem. ")]
+            
+            elsif queryText.match /hi/i or queryText.match /hello/i or queryText.match /hey/i
+                return [(buildMessage message.from.stripped, "Hello. ")]
+            end  
+            # Default / Give up
+            return [(buildMessage message.from.stripped, "Sorry? Is there a way I can help?")]
         end
 
-        def onMessage(message)
+        def onMessage(message, &onProgress)
             # Query handling
             queryMsgs = []
             if message.body.match /Anne/i 
-                queryMsgs = onQuery(message)
+                queryMsgs = onQuery message, &onProgress
             end
 
             return queryMsgs

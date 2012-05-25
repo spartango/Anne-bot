@@ -16,6 +16,12 @@ You'll need to provide Gtalk credentials for Anne:
 Fill in: 
 botUsername = ''
 botPassword = ''
+
+Anne also needs your Asana API key before you can use her.
+Check out http://developer.asana.com
+
+asanaKey    = ''
+
 in bot/mcore.rb
 
 You can customise Anne's behavior in anne.rb
@@ -27,9 +33,3 @@ Just execute run.sh
 
 If you peek inside run.sh, you'll see that all it does is bundle exec, making
 Anne something perfectly suitable for use on Heroku. 
-
-Usage
------
-
-Anne needs your Asana API key before you can use her.
-Check out http://developer.asana.com
