@@ -34,7 +34,7 @@ module Bot
             # TODO
 
             # Show due dates
-            fullTasks.map! { |task| task.name +(task.due_on? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") }
+            fullTasks.map! { |task| task.name + (task.due_on ? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") }
             return fullTasks.join("\n")
         end
 
@@ -271,7 +271,7 @@ module Bot
                 yield (buildMessage message.from.stripped, "Hold on a sec...")
 
                 taskListing = buildTaskListing(workspace.tasks(Asana::User.me.id))
-                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": "+taskListing))]
+                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": \n"+taskListing))]
 
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
@@ -340,7 +340,7 @@ module Bot
                 return [(buildMessage message.from.stripped, "Hello. ")]
             end  
             # Default / Give up
-            return [(buildMessage message.from.stripped, "Sorry? Is there a way I can help?")]
+            return []
         end
 
         def onMessage(message, &onProgress)
