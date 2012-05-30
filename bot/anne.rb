@@ -94,6 +94,40 @@ module Bot
             return targetTask
         end
 
+        def findUser(userName, workspace)
+            # Fetch users from workspace
+            maxscore = -0.1
+            targetUser = nil
+            matcher = Amatch::Jaro.new(userName)
+            workspace.users.each do |user| 
+                score = matcher.match user.name
+                if score > maxscore
+                    targetUser = user
+                    maxscore = score
+                end
+            end
+            
+            @log.debug "[Anne]: Found User: "+targetUser.name
+            # TODO: Do we want to have a threshold for matches?
+            return targetUser
+        end
+
+        def buildWordStack(stopWord, parts)
+            # Consume until 'post'
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == stopWord
+                    pushing = true
+                end
+            end
+            return stack
+        end
+
         def popAndBuild(stopWord, stack)
             buffer = []
             while not stack.empty?
@@ -111,17 +145,7 @@ module Bot
             parts = queryText.split(' ')
 
             # Consume until stopWord
-            stack = []
-
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == startWord
-                    pushing = true
-                end
-            end
+            stack = buildWordStack stopWord, parts
 
             # Pop until stopWord -> workspace name
             name = popAndBuild stopWord, stack
@@ -136,17 +160,7 @@ module Bot
 
             # Consume until 'create'
             # This is a bit of a hack, iterator like behavior
-            stack = []
-
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == action
-                    pushing = true
-                end
-            end
+            stack = buildWordStack action, parts
             
             # Pop until in    -> workspace name
             workspaceName = popAndBuild 'in',   stack
@@ -157,23 +171,28 @@ module Bot
             return { :workspaceName => workspaceName, :taskName => taskName }
         end
 
+        def parseAssignment(queryText)
+            # Tokenize
+            parts = queryText.split(' ')
+
+            stack = buildWordStack 'assign', parts
+            
+            # Pop until in    -> workspace name
+            workspaceName = popAndBuild 'in',   stack
+            assignee      = popAndBuild 'to',   stack
+            taskName      = popAndBuild 'task', stack
+            
+            return nil if taskName == '' or workspaceName == '' or assignee == ''
+
+            return { :assignee => assignee, :workspaceName => workspaceName, :taskName => taskName }
+        end
+
         def parseComment(queryText)
             # Tokenize
             parts = queryText.split(' ')
 
-            # Consume until 'post'
-            stack = []
+            stack = buildWordStack 'post', parts
 
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == 'post'
-                    pushing = true
-                end
-            end
-            
             # Pop until in    -> workspace name
             workspaceName = popAndBuild 'in',      stack
             taskName      = popAndBuild 'task',    stack
@@ -208,6 +227,14 @@ module Bot
             # Update task
             task.update_attribute(:completed, true)
             return [(buildMessage requester, ("I've marked the "+workspace.name+" task, "+task.name+", complete."))]
+        end
+
+        def handleAssignment(requester, assignee, taskName, workspaceName) 
+            workspace = findWorkspace workspaceName
+            task = findTask taskName, workspace
+            user = findUser assignee, workspace
+            task.update_attribute(:assignee, { :id => user.id, :name => user.name } )
+            return [(buildMessage requester, ("I've assigned the "+workspace.name+" task, "+task.name+", to "+user.name))]
         end
 
         # Events
@@ -329,6 +356,17 @@ module Bot
                 return handleCompleteTask message.from.stripped, params[:taskName], params[:workspaceName] if params
 
                 return [(buildMessage message.from.stripped, "Sorry, I couldn't complete the task.")] # onError
+
+            elsif queryText.match /assign task/i
+            # Assignment of a task
+                params = parseAssignment queryText
+
+                # "anne, ... complete task [taskname] in [workspacename] to [username]"
+                yield (buildMessage message.from.stripped, "Assigning...")
+
+                return handleAssignment message.from.stripped, params[:assignee], params[:taskName], params[:workspaceName] if params
+                
+                return [(buildMessage message.from.stripped, "Sorry, I couldn't assign that task.")] # onError
 
             elsif queryText.match /help/i
                 sender = message.from.stripped
