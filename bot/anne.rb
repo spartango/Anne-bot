@@ -17,12 +17,28 @@ module Bot
         end
 
         # Messaging
-
         def buildMessage(user, body) 
             return Blather::Stanza::Message.new user, body
         end
 
         # Asana interactions
+
+        def buildTaskListing(tasks)
+            # Get taskinfo
+            fullTasks = tasks.map { |task| Asana::Task.find(task.id) }
+
+            # Select only tasks that are incomplete
+            fullTasks.select! { |task| not task.completed }
+
+            # Sort tasks by due date
+            # TODO
+
+            # Show due dates
+            fullTasks.map! { |task| task.name +
+                 (task.due_on ? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") +
+                 (task.assignee ? ", Assigned to " + task.assignee.name : "") } 
+            return fullTasks.join("\n")
+        end
 
         def findWorkspace(workspaceName) 
             # Fuzzy search for workspace
@@ -65,7 +81,8 @@ module Bot
             maxscore = -0.1
             targetTask = nil
             matcher = Amatch::Jaro.new(taskName)
-            workspace.tasks(Asana::User.me.id).each do |task| 
+            tasks = (workspace.users.map { |user| workspace.tasks(user) }).flatten
+            tasks.each do |task| 
                 score = matcher.match task.name
                 if score > maxscore
                     targetTask = task
@@ -76,6 +93,40 @@ module Bot
             @log.debug "[Anne]: Found Task: "+targetTask.name
             # TODO: Do we want to have a threshold for matches?
             return targetTask
+        end
+
+        def findUser(userName, workspace)
+            # Fetch users from workspace
+            maxscore = -0.1
+            targetUser = nil
+            matcher = Amatch::Jaro.new(userName)
+            workspace.users.each do |user| 
+                score = matcher.match user.name
+                if score > maxscore
+                    targetUser = user
+                    maxscore = score
+                end
+            end
+            
+            @log.debug "[Anne]: Found User: "+targetUser.name
+            # TODO: Do we want to have a threshold for matches?
+            return targetUser
+        end
+
+        def buildWordStack(stopWord, parts)
+            # Consume until 'post'
+            stack = []
+
+            pushing = false
+            parts.each do |word|
+                if pushing
+                    # Push all
+                    stack.push word
+                elsif word == stopWord
+                    pushing = true
+                end
+            end
+            return stack
         end
 
         def popAndBuild(stopWord, stack)
@@ -95,17 +146,7 @@ module Bot
             parts = queryText.split(' ')
 
             # Consume until stopWord
-            stack = []
-
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == startWord
-                    pushing = true
-                end
-            end
+            stack = buildWordStack stopWord, parts
 
             # Pop until stopWord -> workspace name
             name = popAndBuild stopWord, stack
@@ -120,17 +161,7 @@ module Bot
 
             # Consume until 'create'
             # This is a bit of a hack, iterator like behavior
-            stack = []
-
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == action
-                    pushing = true
-                end
-            end
+            stack = buildWordStack action, parts
             
             # Pop until in    -> workspace name
             workspaceName = popAndBuild 'in',   stack
@@ -141,23 +172,28 @@ module Bot
             return { :workspaceName => workspaceName, :taskName => taskName }
         end
 
+        def parseAssignment(queryText)
+            # Tokenize
+            parts = queryText.split(' ')
+
+            stack = buildWordStack 'assign', parts
+            
+            # Pop until in    -> workspace name
+            workspaceName = popAndBuild 'in',   stack
+            assignee      = popAndBuild 'to',   stack
+            taskName      = popAndBuild 'task', stack
+            
+            return nil if taskName == '' or workspaceName == '' or assignee == ''
+
+            return { :assignee => assignee, :workspaceName => workspaceName, :taskName => taskName }
+        end
+
         def parseComment(queryText)
             # Tokenize
             parts = queryText.split(' ')
 
-            # Consume until 'post'
-            stack = []
+            stack = buildWordStack 'post', parts
 
-            pushing = false
-            parts.each do |word|
-                if pushing
-                    # Push all
-                    stack.push word
-                elsif word == 'post'
-                    pushing = true
-                end
-            end
-            
             # Pop until in    -> workspace name
             workspaceName = popAndBuild 'in',      stack
             taskName      = popAndBuild 'task',    stack
@@ -192,6 +228,14 @@ module Bot
             # Update task
             task.update_attribute(:completed, true)
             return [(buildMessage requester, ("I've marked the "+workspace.name+" task, "+task.name+", complete."))]
+        end
+
+        def handleAssignment(requester, assignee, taskName, workspaceName) 
+            workspace = findWorkspace workspaceName
+            task = findTask taskName, workspace
+            user = findUser assignee, workspace
+            task.update_attribute(:assignee, user.id )
+            return [(buildMessage requester, ("I've assigned the "+workspace.name+" task, "+task.name+", to "+user.name))]
         end
 
         # Events
@@ -256,9 +300,9 @@ module Bot
 
                 yield (buildMessage message.from.stripped, "Hold on a sec...")
 
-                incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| not Asana::Task.find(task.id).completed }
-                tasks = incompleteTasks.map { |task| task.name  }
-                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
+                taskListings = workspace.users.map { |user| buildTaskListing(workspace.tasks(user.id)) }
+                taskListing = taskListings.join("\n")
+                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": \n"+taskListing))]
 
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
@@ -269,9 +313,8 @@ module Bot
 
                 yield (buildMessage message.from.stripped, "Hold on a sec...")
 
-                incompleteTasks = project.tasks.select { |task| not Asana::Task.find(task.id).completed }
-                tasks = incompleteTasks.map { |task| task.name  }
-                return [(buildMessage message.from.stripped, ("Here are the tasks for "+project.name+": "+tasks.join(', ')))]
+                taskListing = buildTaskListing(project.tasks)
+                return [(buildMessage message.from.stripped, ("Here are the tasks for "+project.name+": "+taskListing))]
             # Creation 
 
             # Tasks must have associated workspace
@@ -315,6 +358,17 @@ module Bot
 
                 return [(buildMessage message.from.stripped, "Sorry, I couldn't complete the task.")] # onError
 
+            elsif queryText.match /assign task/i
+            # Assignment of a task
+                params = parseAssignment queryText
+
+                # "anne, ... complete task [taskname] in [workspacename] to [username]"
+                yield (buildMessage message.from.stripped, "Assigning...")
+
+                return handleAssignment message.from.stripped, params[:assignee], params[:taskName], params[:workspaceName] if params
+                
+                return [(buildMessage message.from.stripped, "Sorry, I couldn't assign that task.")] # onError
+
             elsif queryText.match /help/i
                 sender = message.from.stripped
                 return [(buildMessage sender, "Hi! I can *list* workspaces, tasks, or projects. "),
@@ -328,7 +382,7 @@ module Bot
                 return [(buildMessage message.from.stripped, "Hello. ")]
             end  
             # Default / Give up
-            return [(buildMessage message.from.stripped, "Sorry? Is there a way I can help?")]
+            return []
         end
 
         def onMessage(message, &onProgress)
