@@ -34,7 +34,9 @@ module Bot
             # TODO
 
             # Show due dates
-            fullTasks.map! { |task| task.name + (task.due_on ? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") }
+            fullTasks.map! { |task| task.name +
+                 (task.due_on ? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") +
+                 (task.assignee ? ", Assigned to " + task.assignee.name : "") } 
             return fullTasks.join("\n")
         end
 
@@ -270,7 +272,8 @@ module Bot
 
                 yield (buildMessage message.from.stripped, "Hold on a sec...")
 
-                taskListing = buildTaskListing(workspace.tasks(Asana::User.me.id))
+                taskListings = workspace.users.map { |user| buildTaskListing(workspace.tasks(user.id)) }
+                taskListing = taskListings.join("\n")
                 return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": \n"+taskListing))]
 
             # Get all tasks in a given project
