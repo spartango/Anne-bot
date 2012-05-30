@@ -17,12 +17,26 @@ module Bot
         end
 
         # Messaging
-
         def buildMessage(user, body) 
             return Blather::Stanza::Message.new user, body
         end
 
         # Asana interactions
+
+        def buildTaskListing(tasks)
+            # Get taskinfo
+            fullTasks = tasks.map { |task| Asana::Task.find(task.id) }
+
+            # Select only tasks that are incomplete
+            fullTasks.select! { |task| not task.completed }
+
+            # Sort tasks by due date
+            # TODO
+
+            # Show due dates
+            fullTasks.map! { |task| task.name +(task.due_on? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") }
+            return fullTasks.join("\n")
+        end
 
         def findWorkspace(workspaceName) 
             # Fuzzy search for workspace
@@ -256,9 +270,8 @@ module Bot
 
                 yield (buildMessage message.from.stripped, "Hold on a sec...")
 
-                incompleteTasks = workspace.tasks(Asana::User.me.id).select { |task| not Asana::Task.find(task.id).completed }
-                tasks = incompleteTasks.map { |task| task.name  }
-                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": "+tasks.join(', ')))]
+                taskListing = buildTaskListing(workspace.tasks(Asana::User.me.id))
+                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": "+taskListing))]
 
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
@@ -269,9 +282,8 @@ module Bot
 
                 yield (buildMessage message.from.stripped, "Hold on a sec...")
 
-                incompleteTasks = project.tasks.select { |task| not Asana::Task.find(task.id).completed }
-                tasks = incompleteTasks.map { |task| task.name  }
-                return [(buildMessage message.from.stripped, ("Here are the tasks for "+project.name+": "+tasks.join(', ')))]
+                taskListing = buildTaskListing(project.tasks)
+                return [(buildMessage message.from.stripped, ("Here are the tasks for "+project.name+": "+taskListing))]
             # Creation 
 
             # Tasks must have associated workspace
