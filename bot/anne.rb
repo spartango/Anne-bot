@@ -81,7 +81,8 @@ module Bot
             maxscore = -0.1
             targetTask = nil
             matcher = Amatch::Jaro.new(taskName)
-            workspace.tasks(Asana::User.me.id).each do |task| 
+            tasks = (workspace.users.map { |user| workspace.tasks(user) }).flatten
+            tasks.each do |task| 
                 score = matcher.match task.name
                 if score > maxscore
                     targetTask = task
@@ -233,7 +234,7 @@ module Bot
             workspace = findWorkspace workspaceName
             task = findTask taskName, workspace
             user = findUser assignee, workspace
-            task.update_attribute(:assignee, { :id => user.id, :name => user.name } )
+            task.update_attribute(:assignee, user.id )
             return [(buildMessage requester, ("I've assigned the "+workspace.name+" task, "+task.name+", to "+user.name))]
         end
 
