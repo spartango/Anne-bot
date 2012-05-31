@@ -47,6 +47,6 @@ end
 # Message handling
 message :chat?, :body do |message| 
     # Pass to bots for processing
-    send_messages anne.onMessage message
+    send_messages anne.onMessage(message) { |progressMessage| write_to_stream progressMessage }
 end
 
