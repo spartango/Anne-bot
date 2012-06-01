@@ -35,9 +35,9 @@ module Bot
 
             # Show due dates
             fullTasks.map! { |task| task.name +
-                 (task.due_on ? (Date.parse task.due_on).strftime(", Due: %-m/%-d/%Y") : "") +
-                 (task.assignee ? ", Assigned to " + task.assignee.name : "") } 
-            return fullTasks.join("\n")
+                 (task.due_on ? (Date.parse task.due_on).strftime(", due on %-m/%-d/%Y") : "") +
+                 (task.assignee ? ", assigned to " + task.assignee.name + ". " : "") } 
+            return fullTasks.join("\n\n")
         end
 
         def findWorkspace(workspaceName) 
@@ -195,9 +195,10 @@ module Bot
             stack = buildWordStack 'post', parts
 
             # Pop until in    -> workspace name
-            workspaceName = popAndBuild 'in',      stack
+            workspaceName = popAndBuild 'in',         stack
+            # TODO: parser leaves "on" in the comment
             taskName      = popAndBuild 'task',    stack
-            story         = popAndBuild 'comment', stack
+            story         = popAndBuild 'comment',    stack
             
             return nil if taskName == '' or workspaceName == '' or story == ''
 
@@ -209,7 +210,7 @@ module Bot
             workspace = findWorkspace workspaceName
             # Create task
             workspace.create_task(:name => taskName)
-            return [(buildMessage requester, ("I've created the task, "+taskName+", in "+workspace.name))]
+            return [(buildMessage requester, ("I've created the task ''"+taskName+"'' in "+workspace.name+"."))]
         end       
 
         def handleNewComment(requester, commentText, taskName, workspaceName)
@@ -218,7 +219,7 @@ module Bot
             task = findTask taskName, workspace
             # Create story task
             task.create_story(:text => commentText)
-            return [(buildMessage requester, ("I've added a comment to the "+workspace.name+" task, "+task.name))]
+            return [(buildMessage requester, ("I've added a comment to the "+workspace.name+" task ''"+task.name+".''"))]
         end
 
         def handleCompleteTask(requester, taskName, workspaceName)
@@ -227,7 +228,7 @@ module Bot
             task = findTask taskName, workspace
             # Update task
             task.update_attribute(:completed, true)
-            return [(buildMessage requester, ("I've marked the "+workspace.name+" task, "+task.name+", complete."))]
+            return [(buildMessage requester, ("I've marked the "+workspace.name+" task ''"+task.name+"'' complete."))]
         end
 
         def handleAssignment(requester, assignee, taskName, workspaceName) 
@@ -302,7 +303,7 @@ module Bot
 
                 taskListings = workspace.users.map { |user| buildTaskListing(workspace.tasks(user.id)) }
                 taskListing = taskListings.join("\n")
-                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": \n"+taskListing))]
+                return [(buildMessage message.from.stripped, ("Here are the tasks in "+workspace.name+": \n\n"+taskListing))]
 
             # Get all tasks in a given project
             elsif queryText.match /list tasks for/i
@@ -339,7 +340,7 @@ module Bot
                 # Parse out story, taskName, and workspaceName
                 params = parseComment queryText
 
-                yield (buildMessage message.from.stripped, "Working on that post...")
+                yield (buildMessage message.from.stripped, "Posting...")
 
                 return handleNewComment message.from.stripped, params[:story], params[:taskName], params[:workspaceName] if params
                 
@@ -350,7 +351,7 @@ module Bot
                 # Single line
                 # "anne, ... complete task [taskname] in [workspacename]"
 
-                yield (buildMessage message.from.stripped, "I'm on it")
+                yield (buildMessage message.from.stripped, "Working on it...")
 
                 # Parse out taskName and workspaceName
                 params = parseTask queryText, 'complete'
@@ -362,7 +363,7 @@ module Bot
             # Assignment of a task
                 params = parseAssignment queryText
 
-                # "anne, ... complete task [taskname] in [workspacename] to [username]"
+                # "anne, ... assign task [taskname] in [workspacename] to [username]"
                 yield (buildMessage message.from.stripped, "Assigning...")
 
                 return handleAssignment message.from.stripped, params[:assignee], params[:taskName], params[:workspaceName] if params
@@ -373,7 +374,7 @@ module Bot
                 sender = message.from.stripped
                 return [(buildMessage sender, "Hi! I can *list* workspaces, tasks, or projects. "),
                         (buildMessage sender, "I can also help *create tasks* or *complete tasks*, or *post comments*. "),
-                        (buildMessage sender, "I'm happy to be of service. ")]
+                        (buildMessage sender, "I'm happy to be of service. Your wish is my command. ")]
 
             elsif queryText.match /thank/i
                 return [(buildMessage message.from.stripped, "No problem. ")]
