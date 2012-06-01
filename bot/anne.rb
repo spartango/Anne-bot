@@ -196,6 +196,7 @@ module Bot
 
             # Pop until in    -> workspace name
             workspaceName = popAndBuild 'in',         stack
+            
             # TODO: parser leaves "on" in the comment - adding "on task" breaks Anne
             taskName      = popAndBuild 'task',    stack
             story         = popAndBuild 'comment',    stack
