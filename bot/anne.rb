@@ -196,7 +196,7 @@ module Bot
 
             # Pop until in    -> workspace name
             workspaceName = popAndBuild 'in',      stack
-            taskName      = popAndBuild 'task',    stack
+            taskName      = popAndBuild 'on task', stack
             story         = popAndBuild 'comment', stack
             
             return nil if taskName == '' or workspaceName == '' or story == ''
