@@ -10,9 +10,9 @@ log       = Logger.new(STDOUT)
 log.level = Logger::DEBUG
 
 # Login info
-botUsername = 'annebot1@gmail.com'
-botPassword = 'annebot1'
-asanaKey    = 'fuIHeWd.skWUqUaZIKuLyJO9fXtaFnZK'
+botUsername = ''
+botPassword = ''
+asanaKey    = ''
 
 anne = Bot::Anne.new(asanaKey)
 
