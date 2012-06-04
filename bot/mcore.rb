@@ -12,6 +12,7 @@ log.level = Logger::DEBUG
 # Login info
 botUsername = ''
 botPassword = ''
+# found under Asana settings
 asanaKey    = ''
 
 anne = Bot::Anne.new(asanaKey)
