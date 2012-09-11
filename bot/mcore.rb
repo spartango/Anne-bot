@@ -27,6 +27,11 @@ when_ready do
     log.warn "[Core]: Ready!"
 end
 
+disconnected do 
+    log.error "[Core]: Disconnected, reconnecting..."
+    client.connect 
+end
+
 # Handlers
 
 # Online/offline handling
